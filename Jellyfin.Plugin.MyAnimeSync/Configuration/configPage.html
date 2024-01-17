@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>MyAnimeSync settings</title>
+</head>
+<body>
+<div data-role="page" class="page type-interior pluginConfigurationPage" id="MyAnimeSyncConfigurationPage"
+     data-require="emby-button,emby-checkbox,emby-input,emby-select">
+    <div data-role="content">
+        <div class="content-primary">
+            <h1>MyAnimeSync settings</h1>
+            <form id="MyAnimeSyncConfigurationForm">
+                <div id="selectContainer">
+                    <select onchange="MyAnimeSyncConfig.onSelectorChange();" is="emby-select" id="user-selector"
+                            label="Showing plugin settings for...">
+                    </select>
+                </div>
+                <div id="configOptionsContainer">
+                    <div class="inputContainer">
+                        <input is="emby-input" id="ClientID" type="text" label="Client ID:"/>
+                        <input is="emby-input" id="ClientSecret" type="text" label="Client Secret:"/>
+                        <input is="emby-input" id="jellyfinUrl" type="text" label="Jellyfin url:"/>
+                        <div class="fieldDescription">
+                            This is the url used to connect to your jellyfin server instance.
+                            Using this url in your web browser should redirect you to jellyfin homepage.
+                        </div>
+                        <div id="authentificationButton">
+                            <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.enableAuthenfication();" class="raised block">
+                                Authenticate User
+                            </button>
+                            <div class="fieldDescription">
+                                Press this button for user authentification then navigate to url bellow in your favorite web browser.
+                                Make sure that the api redirect url is set properly on myanimelist api config.
+                            </div>
+                            <input is="emby-input" id="authenticationUrl" type="text" label="Api Url:" disabled/>
+                            <input is="emby-input" id="authenticationRedirectUrl" type="text" label="Redirect Url:" disabled/>
+                            <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.validateConfiguration();" class="raised block">
+                                Validate configuration
+                            </button>
+                            <div class="fieldDescription">
+                                Press this button only after completing the previous steps or if the authentication process was previously completed.
+                                If the result of this button isn't positive, the plugin will not work for the user.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var MyAnimeSyncConfig = {
+            guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3",
+            response: "",
+            configCache: [],
+
+            userSelector: document.querySelector('#user-selector'),
+            configOptionsContainer: document.querySelector('#configOptionsContainer'),
+
+            populateUsers: async function (users) {
+                users.forEach(function (user) {
+                    MyAnimeSyncConfig.userSelector.append(new Option(user.Name, user.Id));
+                });
+            },
+
+            onSelectorChange: async function () {
+                await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
+            },
+
+            loadConfig: async function (user, config) {
+                if (config != null) {
+                    this.configCache = config;
+                } else {
+                    config = this.configCache;
+                }
+
+                // Set expected value for server url
+                document.getElementById("jellyfinUrl").value = ApiClient.serverAddress();
+
+                if (config.UserConfigs.some(e => e.Id === user)) {
+                    await this.populateOptionsContainer(config.UserConfigs.filter(e => e.Id === user)[0]);
+                }
+                else
+                {
+                    this.configCache.UserConfigs.push({
+                        Id: user,
+                        ClientID: document.querySelector("#configOptionsContainer #" + "ClientID").value,
+                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value
+                    })
+                }
+            },
+
+            populateOptionsContainer: async function (userConfig) {
+                console.log("User");
+                console.log(userConfig)
+
+                for (const key in userConfig) {
+                    const chk = document.querySelector("#configOptionsContainer input[type=checkbox]#" + key);
+                    if (chk) {
+                        chk.checked = userConfig[key];
+                    }
+
+                    const input = document.querySelector("#configOptionsContainer input[type=text]#" + key);
+                    if (input) {
+                        input.value = userConfig[key];
+                    }
+                }
+            },
+
+            saveConfig: async function (guid) {
+                const checkUID = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                console.log("Testing 1234")
+                if(!checkUID)
+                {
+                    console.log("Config for id doesn't already exists")
+                    elementValue = document.querySelector("#configOptionsContainer #" + "ClientID").value
+                    console.log(elementValue)
+                    this.configCache.UserConfigs.push({
+                        Id: guid,
+                        ClientID: document.querySelector("#configOptionsContainer #" + "ClientID").value,
+                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value
+                    })
+                }
+
+                const uconfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                for (const key in uconfig) {
+                    const element = document.querySelector("#configOptionsContainer #" + key);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            uconfig[key] = element.checked;
+                        } else {
+                            if (element.value != null) {
+                                uconfig[key] = element.value;
+                            }
+                        }
+                    }
+                }
+
+                console.log("Saving config:");
+                console.log(this.configCache);
+                await ApiClient.updatePluginConfiguration(this.guid, this.configCache).then(Dashboard.processPluginConfigurationUpdateResult);
+                console.log("Config Saved")
+            },
+
+            enableAuthenfication: async function () {
+                var guid = MyAnimeSyncConfig.userSelector.value;
+
+                // No need to save here, we only need to update the configCache with up to date information.
+                await MyAnimeSyncConfig.saveConfig(guid);
+
+                const uconfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                console.log(uconfig);
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+
+                if (uconfig.ClientID != null && uconfig.ClientID != "" 
+                    && uconfig.ClientSecret != null && uconfig.ClientSecret != ""
+                    && baseUrl != null && baseUrl != "")
+                {
+                    this.configCache.AuthenticatingUser = guid;
+                    await MyAnimeSyncConfig.saveConfig(guid);
+
+                    await fetch(baseUrl + "/MyAnimeSync/generateUrl")
+                        .then((response) => response.json())
+                        .then((json) => {
+                            console.log(json);
+                            var urlLabel = document.getElementById("authenticationUrl");
+                            urlLabel.value = json;
+                        }
+                    );
+
+                    // Populate authentication redirect url
+                    var authenticationRedirectUrl = document.getElementById("authenticationRedirectUrl");
+                    authenticationRedirectUrl.value = baseUrl + "/MyAnimeSync/apiCode";
+                }
+                else
+                {
+                    window.alert("Please populate client id, client secret and jellyfin url before trying to authenticate.")
+                }
+            },
+
+            validateConfiguration: async function() {
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                await fetch(baseUrl + "/MyAnimeSync/testConfig")
+                        .then((response) => response.json())
+                        .then((json) => {
+                            console.log(json);
+                            if (json)
+                            {
+                                window.alert("Authentication was a success.")
+                            }
+                            else
+                            {
+                                window.alert("Failed authentication.")
+                            }
+                        }
+                    );
+            }
+        }
+
+        document.querySelector('#MyAnimeSyncConfigurationPage')
+            .addEventListener('pageshow', async function () {
+                Dashboard.showLoadingMsg();
+                await Promise.all([
+                    window.ApiClient.getUsers().then(MyAnimeSyncConfig.populateUsers),
+                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, ApiClient.getCurrentUserId()))]);
+                Dashboard.hideLoadingMsg();
+            });
+
+        document.querySelector('#MyAnimeSyncConfigurationForm')
+            .addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                MyAnimeSyncConfig.saveConfig(MyAnimeSyncConfig.userSelector.value);
+                Dashboard.hideLoadingMsg();
+            });
+    </script>
+</div>
+</body>
+</html>
