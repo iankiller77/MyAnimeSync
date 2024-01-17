@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -116,7 +115,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             TokenResponseStruct jsonData = SendUrlEncodedPostRequest(TokenUrl, values);
 
             uConfig.UserToken = jsonData.Access_token;
-            uConfig.RefreshToken = jsonData.Access_token;
+            uConfig.RefreshToken = jsonData.Refresh_token;
             Plugin.Instance?.SaveConfiguration();
         }
 
@@ -140,17 +139,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             TokenResponseStruct jsonData = SendUrlEncodedPostRequest(TokenUrl, values);
 
             uConfig.UserToken = jsonData.Access_token;
-            uConfig.RefreshToken = jsonData.Access_token;
+            uConfig.RefreshToken = jsonData.Refresh_token;
             Plugin.Instance?.SaveConfiguration();
         }
 
         /// <summary>
-        /// Retrieve the anime info associated with a tittle.
+        /// Retrieve the anime id associated with a tittle.
         /// </summary>
         /// <param name="animeName">The user config. <see cref="string"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns> The generated tokens. </returns>
-        public static JsonNode? GetAnimeInfo(string animeName, UserConfig uConfig)
+        public static int? GetAnimeID(string animeName, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -161,8 +160,35 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             JsonNode? jsonData = SendAuthenticatedGetRequest(AnimeUrl, values, token);
+            if (jsonData == null) { return null; }
 
-            return jsonData;
+            AnimeSearchEntry? entry = jsonData["data"]?[0].Deserialize<Node>()?.SearchEntry;
+            if (entry == null || entry.ID == null) { return null; }
+
+            return entry.ID;
+        }
+
+        /// <summary>
+        /// Retrieve the information associated to an anime ID.
+        /// </summary>
+        /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
+        /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
+        /// <returns>Anime info associated to the anime id.</returns>
+        public static AnimeInfo? GetAnimeInfo(int animeID, UserConfig uConfig)
+        {
+            string token = uConfig.UserToken;
+
+            var values = new Dictionary<string, string?>()
+            {
+                { "fields", "id,title,num_episodes,related_anime" }
+            };
+
+            string url = AnimeUrl + "/" + animeID;
+            JsonNode? jsonData = SendAuthenticatedGetRequest(url, values, token);
+            if (jsonData == null) { return null; }
+
+            AnimeInfo? animeInfo = jsonData.Deserialize<AnimeInfo>();
+            return animeInfo;
         }
 
         internal sealed class TokenResponseStruct

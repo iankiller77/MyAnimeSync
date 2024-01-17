@@ -35,6 +35,9 @@
         <Rule Id="SA1602" Action="None" />
         <!-- disable warning SA1633: The file header is missing or not located at the top of the file -->
         <Rule Id="SA1633" Action="None" />
+
+        <!-- disable warning SA1501: Statement should not be on a single line -->
+        <Rule Id="SA1501" Action="None" />
     </Rules>
 
     <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.Design">
@@ -104,5 +107,8 @@
         <Rule Id="CA2101" Action="None" />
         <!-- disable warning CA2234: Pass System.Uri objects instead of strings -->
         <Rule Id="CA2234" Action="None" />
+
+        <!-- disabel warning CA1819: Properties should not return arrays -->
+        <Rule Id="CA1819" Action="None" />
     </Rules>
 </RuleSet>

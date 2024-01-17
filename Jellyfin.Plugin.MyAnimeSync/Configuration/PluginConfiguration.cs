@@ -23,12 +23,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// </summary>
         public Guid AuthenticatingUser { get; set; }
 
-#pragma warning disable CA1819 // Properties should not return arrays
         /// <summary>
         /// Gets or sets the list of user configs.
         /// </summary>
         public UserConfig[] UserConfigs { get; set; }
-#pragma warning restore CA1819 // Properties should not return arrays
 
         /// <summary>
         /// Get config by id.

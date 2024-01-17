@@ -60,7 +60,63 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 if (eventArgs.Item is Episode episode)
                 {
                     string serie = episode.SeriesName;
-                    MalApiHandler.GetAnimeInfo(serie, userConfig);
+                    int? id = MalApiHandler.GetAnimeID(serie, userConfig);
+                    if (id == null)
+                    {
+                        _logger.LogError(
+                            "Could not retrieve id for anime : {AnimeName}",
+                            serie);
+                        return;
+                    }
+
+                    int? episodeNumber = episode.IndexNumber;
+                    if (episodeNumber == null)
+                    {
+                        _logger.LogError(
+                            "Could not retrieve episode number for : {AnimeName}",
+                            serie);
+                        return;
+                    }
+
+                    AnimeInfo? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig);
+                    if (info == null)
+                    {
+                        _logger.LogError(
+                            "Could not retrieve anime info for id : {ID}",
+                            id);
+                        return;
+                    }
+
+                    while (info.EpisodeCount < episodeNumber)
+                    {
+                        episodeNumber -= info.EpisodeCount;
+                        RelatedAnime[]? nodes = info.RelatedNodes;
+                        if (nodes == null)
+                        {
+                            _logger.LogError(
+                            "Could not retrieve related animes for anime : {ID}",
+                            id);
+                            return;
+                        }
+
+                        RelatedAnime? relatedAnime = Array.Find(nodes, element => element.RelationType == "sequel");
+                        if (relatedAnime == null)
+                        {
+                            _logger.LogError(
+                            "Could not retrieve sequel for anime : {ID}",
+                            id);
+                            return;
+                        }
+
+                        info = MalApiHandler.GetAnimeInfo(relatedAnime?.SearchEntry?.ID ?? 0, userConfig);
+                        if (info == null)
+                        {
+                            _logger.LogError(
+                                "Could not retrieve anime info for anime related to anime : {ID}",
+                                id);
+                            return;
+                        }
+                    }
                 }
             }
         }
