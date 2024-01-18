@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
@@ -194,16 +195,22 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             var values = new Dictionary<string, string?>()
             {
                 { "q", animeName },
-                { "limit", "1" }
+                { "limit", "100" }
             };
 
             JsonNode? jsonData = SendAuthenticatedGetRequest(AnimeUrl, values, token);
             if (jsonData == null) { return null; }
 
-            AnimeSearchEntry? entry = jsonData["data"]?[0].Deserialize<Node>()?.SearchEntry;
-            if (entry == null || entry.ID == null) { return null; }
+            Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
+            if (entry == null) { return null; }
 
-            return entry.ID;
+            Node[] matchingEntries = Array.FindAll(entry, element => element.SearchEntry?.Title?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false );
+            if (matchingEntries.Length < 1) { return null; }
+
+            AnimeSearchEntry? bestMatchingNode = matchingEntries.OrderBy(element => element.SearchEntry?.Title?.Length).FirstOrDefault()?.SearchEntry;
+            if (bestMatchingNode == null || bestMatchingNode.ID == null) { return null; }
+
+            return bestMatchingNode.ID;
         }
 
         /// <summary>

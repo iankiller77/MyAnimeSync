@@ -102,7 +102,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         }
 
                         RelatedAnime? relatedAnime = Array.Find(nodes, element => element.RelationType == "sequel");
-                        if (relatedAnime == null)
+                        if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
                         {
                             _logger.LogError(
                             "Could not retrieve sequel for anime : {ID}",
@@ -110,7 +110,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                             return;
                         }
 
-                        info = MalApiHandler.GetAnimeInfo(relatedAnime?.SearchEntry?.ID ?? 0, userConfig);
+                        info = MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig);
                         if (info == null || info.ID == null || info.EpisodeCount == null)
                         {
                             _logger.LogError(
@@ -140,7 +140,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     }
 
                     bool completed = false;
-                    if (episodeNumber >= info.EpisodeCount)
+                    if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
                     {
                         completed = true;
                     }
