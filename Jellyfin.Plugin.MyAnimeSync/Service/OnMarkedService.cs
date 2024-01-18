@@ -78,8 +78,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    AnimeInfo? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig);
-                    if (info == null)
+                    AnimeData? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig);
+                    if (info == null || info.ID == null || info.EpisodeCount == null)
                     {
                         _logger.LogError(
                             "Could not retrieve anime info for id : {ID}",
@@ -87,7 +87,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    while (info.EpisodeCount < episodeNumber)
+                    // If episode is > expect max season episode, we try to find the proper season.
+                    // Also if the number of episodes is unknown, result is 0. So treat it as being the proper anime season.
+                    while (info.EpisodeCount > 0 && info.EpisodeCount < episodeNumber)
                     {
                         episodeNumber -= info.EpisodeCount;
                         RelatedAnime[]? nodes = info.RelatedNodes;
@@ -109,7 +111,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         }
 
                         info = MalApiHandler.GetAnimeInfo(relatedAnime?.SearchEntry?.ID ?? 0, userConfig);
-                        if (info == null)
+                        if (info == null || info.ID == null || info.EpisodeCount == null)
                         {
                             _logger.LogError(
                                 "Could not retrieve anime info for anime related to anime : {ID}",
@@ -117,6 +119,34 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                             return;
                         }
                     }
+
+                    // Retrieve anime status in user library.
+                    UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig);
+                    if (!entry.SuccessStatus)
+                    {
+                        _logger.LogError(
+                                "Could not parse anime list for user : {User}",
+                                userID);
+                        return;
+                    }
+
+                    if (entry.Info != null)
+                    {
+                        // Do nothing if anime is already marked as completed.
+                        if (entry.Info.StatusInfo?.Status == WatchStatus.Completed)
+                        {
+                            return;
+                        }
+                    }
+
+                    bool completed = false;
+                    if (episodeNumber >= info.EpisodeCount)
+                    {
+                        completed = true;
+                    }
+
+                    // Update anime status
+                    MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber.Value, completed, userConfig);
                 }
             }
         }

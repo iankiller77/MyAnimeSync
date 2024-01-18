@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -21,6 +23,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string AuthorisationUrl = ApiBaseUrl + "authorize";
         private const string TokenUrl = ApiBaseUrl + "token";
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
+        private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
 
         private static TokenResponseStruct SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
         {
@@ -42,6 +45,23 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return jsonData;
         }
 
+        private static JsonNode? SendAuthenticatedGetRequest(string url, string token)
+        {
+            HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = httpClient.GetAsync(url).Result;
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new AuthenticationException("Authenticated get request returned an error response.");
+            }
+
+            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
+            JsonNode? jsonData = JsonObject.Parse(reader.ReadToEnd());
+
+            return jsonData;
+        }
+
         private static JsonNode? SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
         {
             HttpClient httpClient = new HttpClient();
@@ -52,6 +72,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             if (!response.IsSuccessStatusCode)
             {
                 throw new AuthenticationException("Authenticated get request returned an error response.");
+            }
+
+            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
+            JsonNode? jsonData = JsonObject.Parse(reader.ReadToEnd());
+
+            return jsonData;
+        }
+
+        private static JsonNode? SendPatchRequest(string url, Dictionary<string, string?> values, string token)
+        {
+            HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var content = new FormUrlEncodedContent(values);
+
+            var response = httpClient.PatchAsync(url, content).Result;
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new AuthenticationException("Authenticated patch request returned an error response.");
             }
 
             StreamReader reader = new StreamReader(response.Content.ReadAsStream());
@@ -174,7 +212,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>Anime info associated to the anime id.</returns>
-        public static AnimeInfo? GetAnimeInfo(int animeID, UserConfig uConfig)
+        public static AnimeData? GetAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -187,8 +225,76 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             JsonNode? jsonData = SendAuthenticatedGetRequest(url, values, token);
             if (jsonData == null) { return null; }
 
-            AnimeInfo? animeInfo = jsonData.Deserialize<AnimeInfo>();
+            AnimeData? animeInfo = jsonData.Deserialize<AnimeData>();
             return animeInfo;
+        }
+
+        /// <summary>
+        /// Retrieve the watch status of a user's anime serie.
+        /// </summary>
+        /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
+        /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
+        /// <returns>The anime serie status.</returns>
+        public static UserAnimeInfo GetUserAnimeInfo(int animeID, UserConfig uConfig)
+        {
+            string token = uConfig.UserToken;
+
+            var values = new Dictionary<string, string?>()
+            {
+                { "fields", "list_status" },
+                { "limit", "1" }
+            };
+
+            JsonNode? jsonData = SendAuthenticatedGetRequest(UserAnimeListUrl, values, token);
+            if (jsonData == null) { return new UserAnimeInfo(null, false); }
+            AnimeListEntry[]? animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
+            if (animeList == null) { return new UserAnimeInfo(null, false); }
+
+            AnimeListEntry? entry = Array.Find(animeList, element => element.AnimeInfo?.ID == animeID);
+            while (entry == null || entry.StatusInfo == null)
+            {
+                JsonNode? pagingData = jsonData["paging"];
+                if (pagingData == null) { return new UserAnimeInfo(null, false); }
+
+                // If we have no next but paging attribute is visible, we parsed the entire anime list.
+                string? nextUrl = pagingData["next"].Deserialize<string>();
+                if (nextUrl == null) { return new UserAnimeInfo(null, true); }
+
+                jsonData = SendAuthenticatedGetRequest(nextUrl, token);
+                if (jsonData == null) { return new UserAnimeInfo(null, false); }
+
+                animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
+                if (animeList == null) { return new UserAnimeInfo(null, false); }
+
+                entry = Array.Find(animeList, element => element.AnimeInfo?.ID == animeID);
+            }
+
+            return new UserAnimeInfo(entry, true);
+        }
+
+        /// <summary>
+        /// Update the watch list of a user.
+        /// </summary>
+        /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
+        /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
+        /// <param name="completed">Completion status of the serie.<see cref="bool"/>.</param>
+        /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
+        public static void UpdateUserInfo(int animeID, int episodeNumber, bool completed, UserConfig uConfig)
+        {
+            string token = uConfig.UserToken;
+
+            var values = new Dictionary<string, string?>()
+            {
+                { "num_watched_episodes", string.Empty + episodeNumber }
+            };
+
+            if (completed)
+            {
+                values.Add("status", WatchStatus.Completed);
+            }
+
+            string url = AnimeUrl + "/" + animeID + "/my_list_status";
+            SendPatchRequest(url, values, token);
         }
 
         internal sealed class TokenResponseStruct
