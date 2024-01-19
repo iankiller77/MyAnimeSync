@@ -45,7 +45,7 @@
         "type": "shell",
         "command": "cp",
         "args": [
-           "./${config:pluginName}/bin/Debug/net8.0/*",
+           "./${config:pluginName}/bin/Debug/net6.0/*",
            "${config:jellyfinDataDir}/plugins/${config:pluginName}/"
         ]
 

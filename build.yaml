@@ -1,0 +1,16 @@
+---
+name: "MyAnimeSync"
+guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
+version: "1.0.0.0"
+targetAbi: "10.8.0.13"
+framework: "net6.0"
+overview: "Synchronise watch status on myanimelist."
+description: >
+  This is a longer description that can span more than one
+  line and include details about your plugin.
+category: "General"
+owner: "iankiller77"
+artifacts:
+- "Jellyfin.Plugin.MyAnimeSync.dll"
+changelog: >
+  First release.
