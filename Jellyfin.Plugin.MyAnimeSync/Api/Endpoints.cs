@@ -60,7 +60,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            JsonNode? info = MalApiHandler.GetAnimeID("Jujustsu Kaisen", uConfig);
+            JsonNode? info = MalApiHandler.GetAnimeID("Jujutsu Kaisen", uConfig);
             if (info == null)
             {
                 return false;
