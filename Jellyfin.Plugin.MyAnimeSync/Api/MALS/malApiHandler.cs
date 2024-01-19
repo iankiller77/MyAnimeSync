@@ -195,7 +195,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             var values = new Dictionary<string, string?>()
             {
                 { "q", animeName },
-                { "limit", "100" }
+                { "limit", "25" },
+                { "fields", "alternative_titles" }
             };
 
             JsonNode? jsonData = SendAuthenticatedGetRequest(AnimeUrl, values, token);
@@ -204,7 +205,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
             if (entry == null) { return null; }
 
-            Node[] matchingEntries = Array.FindAll(entry, element => element.SearchEntry?.Title?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false );
+            Node[] matchingEntries = Array.FindAll(entry, element =>
+                                                            (element.SearchEntry?.Title?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                                                            (element.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false));
             if (matchingEntries.Length < 1) { return null; }
 
             AnimeSearchEntry? bestMatchingNode = matchingEntries.OrderBy(element => element.SearchEntry?.Title?.Length).FirstOrDefault()?.SearchEntry;
@@ -249,7 +252,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             var values = new Dictionary<string, string?>()
             {
                 { "fields", "list_status" },
-                { "limit", "1" }
+                { "limit", "500" }
             };
 
             JsonNode? jsonData = SendAuthenticatedGetRequest(UserAnimeListUrl, values, token);

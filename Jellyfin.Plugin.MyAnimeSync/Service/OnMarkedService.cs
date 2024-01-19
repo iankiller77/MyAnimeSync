@@ -43,7 +43,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         private void OnUserDataMarkedPlayed(object? sender, UserDataSaveEventArgs eventArgs)
         {
             // Check if the user has a config!
-            Console.WriteLine("Episode was marked!");
             var userID = eventArgs.UserId;
             var userConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
             if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
