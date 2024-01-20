@@ -1,6 +1,7 @@
 using System;
 using System.Security.Authentication;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Microsoft.AspNetCore.Mvc;
@@ -52,7 +53,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         /// <param name="guid">The user config. <see cref="Guid"/>.</param>
         /// <returns>Return the success status of the test.</returns>
         [HttpGet("testConfig")]
-        public bool TestUserConfig([FromQuery(Name = "guid")] Guid guid)
+        public async Task<bool> TestUserConfig([FromQuery(Name = "guid")] Guid guid)
         {
             UserConfig? uConfig = Plugin.Instance?.Configuration.GetAuthenticatingUserConfig();
             if (uConfig == null)
@@ -60,7 +61,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            JsonNode? info = MalApiHandler.GetAnimeID("Jujutsu Kaisen", uConfig);
+            JsonNode? info = await MalApiHandler.GetAnimeID("Jujutsu Kaisen", uConfig).ConfigureAwait(true);
             if (info == null)
             {
                 return false;

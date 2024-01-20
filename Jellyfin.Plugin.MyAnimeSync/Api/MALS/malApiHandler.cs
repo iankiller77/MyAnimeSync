@@ -9,6 +9,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Microsoft.AspNetCore.WebUtilities;
@@ -26,11 +27,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
         private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
 
-        private static TokenResponseStruct SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
+        private static async Task<TokenResponseStruct> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
         {
             HttpClient httpClient = new HttpClient();
             var content = new FormUrlEncodedContent(values);
-            var response = httpClient.PostAsync(url, content).Result;
+            var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
             if (!response.IsSuccessStatusCode)
             {
                 throw new AuthenticationException("Could not retrieve provider token");
@@ -46,12 +47,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return jsonData;
         }
 
-        private static JsonNode? SendAuthenticatedGetRequest(string url, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = httpClient.GetAsync(url).Result;
+            var response = await httpClient.GetAsync(url).ConfigureAwait(true);
             if (!response.IsSuccessStatusCode)
             {
                 throw new AuthenticationException("Authenticated get request returned an error response.");
@@ -63,13 +64,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return jsonData;
         }
 
-        private static JsonNode? SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var uri = new Uri(QueryHelpers.AddQueryString(url, values));
 
-            var response = httpClient.GetAsync(uri).Result;
+            var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
             if (!response.IsSuccessStatusCode)
             {
                 throw new AuthenticationException("Authenticated get request returned an error response.");
@@ -81,13 +82,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return jsonData;
         }
 
-        private static JsonNode? SendPatchRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var content = new FormUrlEncodedContent(values);
 
-            var response = httpClient.PatchAsync(url, content).Result;
+            var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
             if (!response.IsSuccessStatusCode)
             {
                 throw new AuthenticationException("Authenticated patch request returned an error response.");
@@ -136,7 +137,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         /// <param name="apiCode">The user code received from authentication url. <see cref="string"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static void GetNewTokens(string apiCode, UserConfig uConfig)
+        public static async void GetNewTokens(string apiCode, UserConfig uConfig)
         {
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -151,7 +152,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "code_verifier", codeVerifier },
                 { "grant_type", grantType }
             };
-            TokenResponseStruct jsonData = SendUrlEncodedPostRequest(TokenUrl, values);
+            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
 
             uConfig.UserToken = jsonData.Access_token;
             uConfig.RefreshToken = jsonData.Refresh_token;
@@ -162,7 +163,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// Refresh api token for futur api calls.
         /// </summary>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static void RefreshTokens(UserConfig uConfig)
+        public static async void RefreshTokens(UserConfig uConfig)
         {
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -175,7 +176,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "grant_type", "refresh_token" },
                 { "refresh_token", refreshToken }
             };
-            TokenResponseStruct jsonData = SendUrlEncodedPostRequest(TokenUrl, values);
+            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
 
             uConfig.UserToken = jsonData.Access_token;
             uConfig.RefreshToken = jsonData.Refresh_token;
@@ -188,7 +189,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="animeName">The user config. <see cref="string"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns> The generated tokens. </returns>
-        public static int? GetAnimeID(string animeName, UserConfig uConfig)
+        public static async Task<int?> GetAnimeID(string animeName, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -199,7 +200,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "fields", "alternative_titles" }
             };
 
-            JsonNode? jsonData = SendAuthenticatedGetRequest(AnimeUrl, values, token);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
@@ -222,7 +223,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>Anime info associated to the anime id.</returns>
-        public static AnimeData? GetAnimeInfo(int animeID, UserConfig uConfig)
+        public static async Task<AnimeData?> GetAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -232,7 +233,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID;
-            JsonNode? jsonData = SendAuthenticatedGetRequest(url, values, token);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             AnimeData? animeInfo = jsonData.Deserialize<AnimeData>();
@@ -245,7 +246,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>The anime serie status.</returns>
-        public static UserAnimeInfo GetUserAnimeInfo(int animeID, UserConfig uConfig)
+        public static async Task<UserAnimeInfo> GetUserAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -255,7 +256,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "limit", "500" }
             };
 
-            JsonNode? jsonData = SendAuthenticatedGetRequest(UserAnimeListUrl, values, token);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token).ConfigureAwait(true);
             if (jsonData == null) { return new UserAnimeInfo(null, false); }
             AnimeListEntry[]? animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
             if (animeList == null) { return new UserAnimeInfo(null, false); }
@@ -270,7 +271,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 string? nextUrl = pagingData["next"].Deserialize<string>();
                 if (nextUrl == null) { return new UserAnimeInfo(null, true); }
 
-                jsonData = SendAuthenticatedGetRequest(nextUrl, token);
+                jsonData = await SendAuthenticatedGetRequest(nextUrl, token).ConfigureAwait(true);
                 if (jsonData == null) { return new UserAnimeInfo(null, false); }
 
                 animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
@@ -289,7 +290,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="completed">Completion status of the serie.<see cref="bool"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static void UpdateUserInfo(int animeID, int episodeNumber, bool completed, UserConfig uConfig)
+        public static async void UpdateUserInfo(int animeID, int episodeNumber, bool completed, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -304,7 +305,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             }
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
-            SendPatchRequest(url, values, token);
+            await SendPatchRequest(url, values, token).ConfigureAwait(true);
         }
 
         internal sealed class TokenResponseStruct

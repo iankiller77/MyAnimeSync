@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         /// </summary>
         /// <param name="sender">Sender.<see cref="object"/>.</param>
         /// <param name="eventArgs">Informations about the event.<see cref="UserDataSaveEventArgs"/>.</param>
-        private void OnUserDataMarkedPlayed(object? sender, UserDataSaveEventArgs eventArgs)
+        private async void OnUserDataMarkedPlayed(object? sender, UserDataSaveEventArgs eventArgs)
         {
             // Check if the user has a config!
             var userID = eventArgs.UserId;
@@ -59,7 +59,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 if (eventArgs.Item is Episode episode)
                 {
                     string serie = episode.SeriesName;
-                    int? id = MalApiHandler.GetAnimeID(serie, userConfig);
+                    int? id = await MalApiHandler.GetAnimeID(serie, userConfig).ConfigureAwait(true);
                     if (id == null)
                     {
                         _logger.LogError(
@@ -77,7 +77,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    AnimeData? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig);
+                    AnimeData? info = await MalApiHandler.GetAnimeInfo(id.Value, userConfig).ConfigureAwait(true);
                     if (info == null || info.ID == null || info.EpisodeCount == null)
                     {
                         _logger.LogError(
@@ -109,7 +109,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                             return;
                         }
 
-                        info = MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig);
+                        info = await MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
                         if (info == null || info.ID == null || info.EpisodeCount == null)
                         {
                             _logger.LogError(
@@ -120,7 +120,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     }
 
                     // Retrieve anime status in user library.
-                    UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig);
+                    UserAnimeInfo entry = await MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).ConfigureAwait(true);
                     if (!entry.SuccessStatus)
                     {
                         _logger.LogError(
