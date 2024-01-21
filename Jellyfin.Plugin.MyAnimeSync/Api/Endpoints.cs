@@ -20,7 +20,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         /// </summary>
         /// <param name="code">The user authorisation code. <see cref="string"/>.</param>
         [HttpGet("apicode")]
-        public void RetrieveApiCode([FromQuery(Name = "code")] string code)
+        public async void RetrieveApiCode([FromQuery(Name = "code")] string code)
         {
             UserConfig? uConfig = Plugin.Instance?.Configuration.GetAuthenticatingUserConfig();
             if (uConfig == null)
@@ -28,7 +28,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 throw new AuthenticationException("No valid user is currently being authenticated.");
             }
 
-            MalApiHandler.GetNewTokens(code, uConfig);
+            await MalApiHandler.GetNewTokens(code, uConfig).ConfigureAwait(false);
         }
 
         /// <summary>

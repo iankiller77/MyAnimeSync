@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -132,12 +133,30 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return $"{AuthorisationUrl}?response_type=code&client_id={uConfig.ClientID}&code_challenge={codeChallenge}";
         }
 
+        private static async Task UpdateTokensInConfig(TokenResponseStruct response, UserConfig uConfig)
+        {
+            await Task.Run(() =>
+            {
+                if (response.AccessToken == null || response.RefreshToken == null || response.ExpiresIn == null)
+                {
+                    throw new AuthenticationException("Could not retrieve data from token response!");
+                }
+
+                uConfig.TokenExpirationDateTime = DateTime.Now.AddSeconds(response.ExpiresIn.Value);
+                uConfig.TokenAcquireDateTime = DateTime.Now;
+                uConfig.UserToken = response.AccessToken;
+                uConfig.RefreshToken = response.RefreshToken;
+                Plugin.Instance?.SaveConfiguration();
+            }).ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Generate api token for futur api calls.
         /// </summary>
         /// <param name="apiCode">The user code received from authentication url. <see cref="string"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static async void GetNewTokens(string apiCode, UserConfig uConfig)
+        /// <returns>The task.</returns>
+        public static async Task GetNewTokens(string apiCode, UserConfig uConfig)
         {
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -153,18 +172,22 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "grant_type", grantType }
             };
             TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
-
-            uConfig.UserToken = jsonData.Access_token;
-            uConfig.RefreshToken = jsonData.Refresh_token;
-            Plugin.Instance?.SaveConfiguration();
+            await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
         /// <summary>
         /// Refresh api token for futur api calls.
         /// </summary>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static async void RefreshTokens(UserConfig uConfig)
+        /// <returns>The task.</returns>
+        public static async Task RefreshTokens(UserConfig uConfig)
         {
+            DateTime expirationDateTime = uConfig.TokenExpirationDateTime;
+            DateTime acquiredTokenDate = uConfig.TokenAcquireDateTime;
+
+            // Only refresh if tokens are invalid or if the token is at least 7 days old.
+            if (DateTime.Now.AddMinutes(5) < expirationDateTime || (DateTime.Now - acquiredTokenDate).TotalDays < 7) { return; }
+
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
             string refreshToken = uConfig.RefreshToken;
@@ -176,11 +199,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "grant_type", "refresh_token" },
                 { "refresh_token", refreshToken }
             };
-            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
 
-            uConfig.UserToken = jsonData.Access_token;
-            uConfig.RefreshToken = jsonData.Refresh_token;
-            Plugin.Instance?.SaveConfiguration();
+            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -312,15 +333,21 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         {
             public TokenResponseStruct()
             {
-                Access_token = string.Empty;
-                Refresh_token = string.Empty;
+                AccessToken = string.Empty;
+                RefreshToken = string.Empty;
             }
 
             [JsonPropertyName("access_token")]
-            public string Access_token { get; set; }
+            public string AccessToken { get; set; }
 
             [JsonPropertyName("refresh_token")]
-            public string Refresh_token { get; set; }
+            public string RefreshToken { get; set; }
+
+            /// <summary>
+            /// Gets or sets time before the token expire in seconds.
+            /// </summary>
+            [JsonPropertyName("expires_in")]
+            public int? ExpiresIn { get; set; }
         }
     }
 }

@@ -56,6 +56,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             // If we have a new video marked as played.
             if (eventArgs.SaveReason == UserDataSaveReason.TogglePlayed && eventArgs.UserData.Played)
             {
+                // Update tokens if needed before using the api.
+                await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
+
                 if (eventArgs.Item is Episode episode)
                 {
                     string serie = episode.SeriesName;

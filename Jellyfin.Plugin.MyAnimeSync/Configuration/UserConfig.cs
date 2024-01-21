@@ -15,6 +15,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         {
             UserToken = string.Empty;
             RefreshToken = string.Empty;
+            TokenExpirationDateTime = DateTime.MinValue;
+            TokenAcquireDateTime = DateTime.MinValue;
             ClientID = string.Empty;
             ClientSecret = string.Empty;
             CodeChallenge = string.Empty;
@@ -29,6 +31,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets refresh token.
         /// </summary>
         public string RefreshToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the expiration date of the user token.
+        /// </summary>
+        public DateTime TokenExpirationDateTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date the tokens were either refreshed or created.
+        /// </summary>
+        public DateTime TokenAcquireDateTime { get; set; }
 
         /// <summary>
         /// Gets or sets client id.
