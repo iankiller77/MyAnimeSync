@@ -42,20 +42,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         /// <param name="eventArgs">Informations about the event.<see cref="UserDataSaveEventArgs"/>.</param>
         private async void OnUserDataMarkedPlayed(object? sender, UserDataSaveEventArgs eventArgs)
         {
-            // Check if the user has a config!
-            var userID = eventArgs.UserId;
-            var userConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
-            if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
-            {
-                _logger.LogError(
-                    "User {UserName} does not have anime backup setup.",
-                    eventArgs.UserId);
-                return;
-            }
-
             // If we have a new video marked as played.
-            if (eventArgs.SaveReason == UserDataSaveReason.TogglePlayed && eventArgs.UserData.Played)
+            if ((eventArgs.SaveReason == UserDataSaveReason.TogglePlayed || eventArgs.SaveReason == UserDataSaveReason.PlaybackFinished) && eventArgs.UserData.Played)
             {
+                // Check if the user has a config!
+                var userID = eventArgs.UserId;
+                var userConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
+                if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
+                {
+                    _logger.LogError(
+                        "User {UserName} does not have anime backup setup.",
+                        eventArgs.UserId);
+                    return;
+                }
+
                 // Update tokens if needed before using the api.
                 await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
 
