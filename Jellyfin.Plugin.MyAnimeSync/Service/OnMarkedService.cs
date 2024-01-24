@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
@@ -15,17 +18,19 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
     {
         private readonly ILogger<OnMarkedService> _logger;
         private readonly IUserDataManager _userDataManager;
+        private readonly ILibraryManager _libraryManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OnMarkedService"/> class.
         /// </summary>
-        /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{OnMarkedService}"/> interface.</param>
         /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
-        public OnMarkedService(ISessionManager sessionManager, ILogger<OnMarkedService> logger, IUserDataManager userDataManager)
+        /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+        public OnMarkedService(ILogger<OnMarkedService> logger, IUserDataManager userDataManager, ILibraryManager libraryManager)
         {
             _logger = logger;
             _userDataManager = userDataManager;
+            _libraryManager = libraryManager;
         }
 
         /// <inheritdoc/>
@@ -58,10 +63,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
                 // Update tokens if needed before using the api.
                 await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
-
                 if (eventArgs.Item is Episode episode)
                 {
                     string serie = episode.SeriesName;
+                    List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders();
+                    Folder? folder = episode.GetParent().GetParent() as Folder;
+                    if (folder == null)
+                    {
+                        _logger.LogError(
+                            "Could not retrieve folder associated with episode : {AnimeName}",
+                            serie);
+                        return;
+                    }
+
+                    if (!virtualFolders.Any(element => element.Locations.Contains(folder.ContainingFolderPath) && userConfig.ListMonitoredLibraryGuid.Contains(Guid.Parse(element.ItemId))))
+                    {
+                        return;
+                    }
+
                     int? id = await MalApiHandler.GetAnimeID(serie, userConfig).ConfigureAwait(true);
                     if (id == null)
                     {

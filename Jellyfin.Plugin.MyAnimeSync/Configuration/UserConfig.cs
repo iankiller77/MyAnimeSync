@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Jellyfin.Data.Entities;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Configuration
@@ -20,6 +21,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             ClientID = string.Empty;
             ClientSecret = string.Empty;
             CodeChallenge = string.Empty;
+            ListMonitoredLibraryGuid = Array.Empty<Guid>();
         }
 
         /// <summary>
@@ -56,6 +58,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets code challenge.
         /// </summary>
         public string CodeChallenge { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of libraries monitored for the user.
+        /// </summary>
+        public Guid[] ListMonitoredLibraryGuid { get; set; }
 
         /// <summary>
         /// Gets or sets user id.

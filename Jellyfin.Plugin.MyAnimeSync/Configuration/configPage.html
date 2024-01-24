@@ -24,7 +24,7 @@
                             This is the url used to connect to your jellyfin server instance.
                             Using this url in your web browser should redirect you to jellyfin homepage.
                         </div>
-                        <div id="authentificationButton">
+                        <div id="authentification">
                             <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.enableAuthenfication();" class="raised block">
                                 Authenticate User
                             </button>
@@ -41,6 +41,10 @@
                                 Press this button only after completing the previous steps or if the authentication process was previously completed.
                                 If the result of this button isn't positive, the plugin will not work for the user.
                             </div>
+                        </div>
+                        <div id="libraryContainer">
+                            <h3 class="checkboxListLabel">Checked Libraries:</h3>
+                            <div id="CheckedLibraries" class="paperList checkboxList checkboxList-paperList"></div>
                         </div>
                     </div>
                 </div>
@@ -92,6 +96,34 @@
                         ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value
                     })
                 }
+
+                var userConfig = this.configCache.UserConfigs.filter(e => e.Id === user)[0];
+
+                var checkLibDiv = document.getElementById("CheckedLibraries");
+                checkLibDiv.innerHTML = "";
+                ApiClient.getVirtualFolders().then(function (result) {
+                    var div = document.createElement("div");
+                    div.setAttribute("data-role", "controlgroup");
+                    checkLibDiv.appendChild(div);
+                    for (var i = 0; i < result.length; i++)
+                    {
+                        var checkBox = document.createElement("input");
+                        checkBox.setAttribute("is", "emby-checkbox");
+                        checkBox.type = "checkbox";
+                        checkBox.value = result[i].ItemId;
+                        if (userConfig.ListMonitoredLibraryGuid.includes(result[i].ItemId))
+                        {
+                            checkBox.setAttribute("checked", true);
+                        }
+
+                        var label = document.createElement("label");
+                        label.appendChild(checkBox);
+                        var span = document.createElement("span");
+                        span.appendChild(document.createTextNode(result[i].Name));
+                        label.appendChild(span);
+                        div.appendChild(label);
+                    }
+                })
             },
 
             populateOptionsContainer: async function (userConfig) {
@@ -113,10 +145,8 @@
 
             saveConfig: async function (guid) {
                 const checkUID = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
-                console.log("Testing 1234")
                 if(!checkUID)
                 {
-                    console.log("Config for id doesn't already exists")
                     elementValue = document.querySelector("#configOptionsContainer #" + "ClientID").value
                     console.log(elementValue)
                     this.configCache.UserConfigs.push({
@@ -126,19 +156,27 @@
                     })
                 }
 
-                const uconfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                const uConfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
 
-                for (const key in uconfig) {
+                for (const key in uConfig) {
                     const element = document.querySelector("#configOptionsContainer #" + key);
                     if (element) {
                         if (element.type === 'checkbox') {
-                            uconfig[key] = element.checked;
+                            uConfig[key] = element.checked;
                         } else {
                             if (element.value != null) {
-                                uconfig[key] = element.value;
+                                uConfig[key] = element.value;
                             }
                         }
                     }
+                }
+
+                var librariesDiv = document.getElementById("CheckedLibraries");
+                var checkedLibraries = librariesDiv.querySelectorAll('input[type=checkbox]:checked');
+                uConfig.ListMonitoredLibraryGuid = [];
+                for (var i = 0; i < checkedLibraries.length; i++)
+                {
+                    uConfig.ListMonitoredLibraryGuid.push(checkedLibraries[i].value);
                 }
 
                 console.log("Saving config:");
@@ -157,7 +195,7 @@
                 console.log(uconfig);
                 var baseUrl = document.getElementById("jellyfinUrl").value;
 
-                if (uconfig.ClientID != null && uconfig.ClientID != "" 
+                if (uconfig.ClientID != null && uconfig.ClientID != ""
                     && uconfig.ClientSecret != null && uconfig.ClientSecret != ""
                     && baseUrl != null && baseUrl != "")
                 {
