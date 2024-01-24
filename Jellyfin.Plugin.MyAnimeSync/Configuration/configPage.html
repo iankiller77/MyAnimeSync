@@ -66,6 +66,7 @@
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
 
             populateUsers: async function (users) {
+                MyAnimeSyncConfig.userSelector.innerHTML = "";
                 users.forEach(function (user) {
                     MyAnimeSyncConfig.userSelector.append(new Option(user.Name, user.Id));
                 });
