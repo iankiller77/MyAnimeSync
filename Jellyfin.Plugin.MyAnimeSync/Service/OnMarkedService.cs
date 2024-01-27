@@ -67,7 +67,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 {
                     string serie = episode.SeriesName;
                     List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders();
-                    Folder? folder = episode.GetParent().GetParent() as Folder;
+                    Folder? folder = episode.Series.GetParent() as Folder;
                     if (folder == null)
                     {
                         _logger.LogError(
