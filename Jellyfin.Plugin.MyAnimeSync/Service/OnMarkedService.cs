@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
+using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -38,6 +39,29 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         {
             _userDataManager.UserDataSaved += OnUserDataMarkedPlayed;
             return Task.CompletedTask;
+        }
+
+        private async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig)
+        {
+            RelatedAnime[]? nodes = info.RelatedNodes;
+            if (nodes == null)
+            {
+                _logger.LogError(
+                "Could not retrieve related animes for anime : {Title}",
+                info.Title);
+                return null;
+            }
+
+            RelatedAnime? relatedAnime = Array.Find(nodes, element => element.RelationType == "sequel");
+            if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
+            {
+                _logger.LogError(
+                "Could not retrieve sequel for anime : {Title}",
+                info.Title);
+                return null;
+            }
+
+            return await MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -108,34 +132,45 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
+                    int seasonOffset = episode.AiredSeasonNumber - 1 ?? 0;
+
+                    // If we have a specified anime season.
+                    while (seasonOffset > 0)
+                    {
+                        info = await GetAnimeSequel(info, userConfig).ConfigureAwait(true);
+                        if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null)
+                        {
+                            _logger.LogError(
+                                "Could not retrieve expected sequel using season offset for anime : {ID}",
+                                id);
+                            return;
+                        }
+
+                        Regex expression = new Regex(".*part ([0-9]+).*", RegexOptions.IgnoreCase);
+                        Match match = expression.Match(info.Title);
+                        if (match.Success)
+                        {
+                            int partNumber;
+                            _ = int.TryParse(match.Groups[1].Value, out partNumber);
+                            if (partNumber > 1)
+                            {
+                                continue;
+                            }
+                        }
+
+                        seasonOffset--;
+                    }
+
                     // If episode is > expect max season episode, we try to find the proper season.
                     // Also if the number of episodes is unknown, result is 0. So treat it as being the proper anime season.
                     while (info.EpisodeCount > 0 && info.EpisodeCount < episodeNumber)
                     {
                         episodeNumber -= info.EpisodeCount;
-                        RelatedAnime[]? nodes = info.RelatedNodes;
-                        if (nodes == null)
-                        {
-                            _logger.LogError(
-                            "Could not retrieve related animes for anime : {ID}",
-                            id);
-                            return;
-                        }
-
-                        RelatedAnime? relatedAnime = Array.Find(nodes, element => element.RelationType == "sequel");
-                        if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
-                        {
-                            _logger.LogError(
-                            "Could not retrieve sequel for anime : {ID}",
-                            id);
-                            return;
-                        }
-
-                        info = await MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
+                        info = await GetAnimeSequel(info, userConfig).ConfigureAwait(true);
                         if (info == null || info.ID == null || info.EpisodeCount == null)
                         {
                             _logger.LogError(
-                                "Could not retrieve anime info for anime related to anime : {ID}",
+                                "Could not retrieve expected sequel using episode offset for anime : {ID}",
                                 id);
                             return;
                         }
