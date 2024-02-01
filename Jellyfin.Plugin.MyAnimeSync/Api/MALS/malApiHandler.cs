@@ -214,9 +214,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         {
             string token = uConfig.UserToken;
 
+            string searchString = animeName;
+            if (searchString.Length > 64)
+            {
+                searchString = searchString.Remove(64);
+            }
+
             var values = new Dictionary<string, string?>()
             {
-                { "q", animeName },
+                { "q", searchString },
                 { "limit", "25" },
                 { "fields", "alternative_titles" }
             };
