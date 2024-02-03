@@ -1,0 +1,18 @@
+{
+        "guid": "28612bb6-e3ab-4099-a682-f413d4ca19d3",
+        "name": "MyAnimeSync",
+        "description": "Jellyfin plugin to synchronize anime watch status on myanimelist.net\n",
+        "overview": "Update user watch status on myanimelist.net",
+        "owner": "iankiller77",
+        "category": "General",
+        "versions": [
+            {
+                "version": "1.0.0.0",
+                "changelog": "Initial release.\n",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.0/myanimesync_1.0.0.0.zip",
+                "checksum": "e4d886b5c18e0a8ee488ca5b0feb6b09",
+                "timestamp": "2024-01-24 00:00:00"
+            }
+        ]
+    }
