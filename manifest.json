@@ -7,6 +7,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.2.1.0",
+                "changelog": "1. bug/Anime_Name_Exceeding_Max_Search_Lenght\n",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.2.1/myanimesync_1.2.1.0.zip",
+                "checksum": "152f2cd8e6c9139563e3423cb2858a52",
+                "timestamp": "2024-01-31 00:00:00"
+            },
+            {
                 "version": "1.0.0.0",
                 "changelog": "Initial release.\n",
                 "targetAbi": "10.8.0.13",
