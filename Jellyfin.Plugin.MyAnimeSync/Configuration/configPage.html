@@ -18,11 +18,17 @@
                 <div id="configOptionsContainer">
                     <div class="inputContainer">
                         <input is="emby-input" id="ClientID" type="text" label="Client ID:"/>
-                        <input is="emby-input" id="ClientSecret" type="text" label="Client Secret:"/>
-                        <input is="emby-input" id="jellyfinUrl" type="text" label="Jellyfin url:"/>
+                        <input is="emby-input" id="ClientSecret" type="password" label="Client Secret:"/>
+                        <input is="emby-input" id="jellyfinUrl" type="text" onchange="MyAnimeSyncConfig.updateRedirectUrl();" label="Jellyfin url:"/>
                         <div class="fieldDescription">
-                            This is the url used to connect to your jellyfin server instance.
-                            Using this url in your web browser should redirect you to jellyfin homepage.
+                            This is the url used to connect to your jellyfin server instance.<br>
+                            Using this url in your web browser should redirect you to your jellyfin server homepage.<br>
+                            If this is not the right url, make sure to update it to the url used to connect to your jellyfin server.
+                        </div>
+                        <input is="emby-input" id="authenticationRedirectUrl" type="text" label="Redirect Url:" disabled/>
+                        <div class="fieldDescription">
+                            This is the redirect url to use for the authentication process.<br>
+                            Make sure to properly update the app redirect url on myanimelist.net api to this redirect url before pressing the authenticate user button.
                         </div>
                         <div id="authentification">
                             <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.enableAuthenfication();" class="raised block">
@@ -30,10 +36,8 @@
                             </button>
                             <div class="fieldDescription">
                                 Press this button for user authentification then navigate to url bellow in your favorite web browser.
-                                Make sure that the api redirect url is set properly on myanimelist api config.
                             </div>
                             <input is="emby-input" id="authenticationUrl" type="text" label="Api Url:" disabled/>
-                            <input is="emby-input" id="authenticationRedirectUrl" type="text" label="Redirect Url:" disabled/>
                             <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.validateConfiguration();" class="raised block">
                                 Validate configuration
                             </button>
@@ -85,17 +89,12 @@
 
                 // Set expected value for server url
                 document.getElementById("jellyfinUrl").value = ApiClient.serverAddress();
+                MyAnimeSyncConfig.updateRedirectUrl();
+
+                await MyAnimeSyncConfig.createUserConfigInCache(user);
 
                 if (config.UserConfigs.some(e => e.Id === user)) {
                     await this.populateOptionsContainer(config.UserConfigs.filter(e => e.Id === user)[0]);
-                }
-                else
-                {
-                    this.configCache.UserConfigs.push({
-                        Id: user,
-                        ClientID: document.querySelector("#configOptionsContainer #" + "ClientID").value,
-                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value
-                    })
                 }
 
                 var userConfig = this.configCache.UserConfigs.filter(e => e.Id === user)[0];
@@ -141,10 +140,16 @@
                     if (input) {
                         input.value = userConfig[key];
                     }
+
+                    const passwordInput = document.querySelector("#configOptionsContainer input[type=password]#" + key);
+                    if (passwordInput) {
+                        passwordInput.value = userConfig[key];
+                    }
                 }
             },
 
-            saveConfig: async function (guid) {
+            // This create the user config in cache if it does not already exists.
+            createUserConfigInCache: async function(guid) {
                 const checkUID = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
                 if(!checkUID)
                 {
@@ -153,9 +158,15 @@
                     this.configCache.UserConfigs.push({
                         Id: guid,
                         ClientID: document.querySelector("#configOptionsContainer #" + "ClientID").value,
-                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value
+                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value,
+                        ListMonitoredLibraryGuid: []
                     })
                 }
+            },
+
+            updateCache: async function (guid)
+            {
+                await MyAnimeSyncConfig.createUserConfigInCache(guid);
 
                 const uConfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
 
@@ -179,6 +190,10 @@
                 {
                     uConfig.ListMonitoredLibraryGuid.push(checkedLibraries[i].value);
                 }
+            },
+
+            saveConfig: async function (guid) {
+                await MyAnimeSyncConfig.updateCache(guid);
 
                 console.log("Saving config:");
                 console.log(this.configCache);
@@ -186,11 +201,18 @@
                 console.log("Config Saved")
             },
 
+            updateRedirectUrl: async function () {
+                // Populate authentication redirect url
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                var authenticationRedirectUrl = document.getElementById("authenticationRedirectUrl");
+                authenticationRedirectUrl.value = baseUrl + "/MyAnimeSync/apiCode";
+            },
+
             enableAuthenfication: async function () {
                 var guid = MyAnimeSyncConfig.userSelector.value;
 
                 // No need to save here, we only need to update the configCache with up to date information.
-                await MyAnimeSyncConfig.saveConfig(guid);
+                await MyAnimeSyncConfig.updateCache(guid);
 
                 const uconfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
                 console.log(uconfig);
@@ -211,10 +233,6 @@
                             urlLabel.value = json;
                         }
                     );
-
-                    // Populate authentication redirect url
-                    var authenticationRedirectUrl = document.getElementById("authenticationRedirectUrl");
-                    authenticationRedirectUrl.value = baseUrl + "/MyAnimeSync/apiCode";
                 }
                 else
                 {
@@ -230,6 +248,8 @@
                             console.log(json);
                             if (json)
                             {
+                                // If authentication was a success, retrieve tokens!
+                                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, ApiClient.getCurrentUserId()));
                                 window.alert("Authentication was a success.")
                             }
                             else
