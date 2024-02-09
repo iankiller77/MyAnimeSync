@@ -1,4 +1,5 @@
-{
+[
+    {
         "guid": "28612bb6-e3ab-4099-a682-f413d4ca19d3",
         "name": "MyAnimeSync",
         "description": "Jellyfin plugin to synchronize anime watch status on myanimelist.net\n",
@@ -24,3 +25,4 @@
             }
         ]
     }
+]
