@@ -186,10 +186,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    if (entry.Info != null)
+                    if (entry.Info != null && entry.Info.StatusInfo != null)
                     {
-                        // Do nothing if anime is already marked as completed.
-                        if (entry.Info.StatusInfo?.Status == WatchStatus.Completed)
+                        // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
+                        if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber.Value)
                         {
                             return;
                         }
