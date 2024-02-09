@@ -91,7 +91,7 @@
                 document.getElementById("jellyfinUrl").value = ApiClient.serverAddress();
                 MyAnimeSyncConfig.updateRedirectUrl();
 
-                await MyAnimeSyncConfig.createUserConfigInCache(user);
+                await MyAnimeSyncConfig.createEmptyUserConfigInCache(user);
 
                 if (config.UserConfigs.some(e => e.Id === user)) {
                     await this.populateOptionsContainer(config.UserConfigs.filter(e => e.Id === user)[0]);
@@ -148,8 +148,8 @@
                 }
             },
 
-            // This create the user config in cache if it does not already exists.
-            createUserConfigInCache: async function(guid) {
+            // This create an empty user config in cache if it does not already exists.
+            createEmptyUserConfigInCache: async function(guid) {
                 const checkUID = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
                 if(!checkUID)
                 {
@@ -157,8 +157,8 @@
                     console.log(elementValue)
                     this.configCache.UserConfigs.push({
                         Id: guid,
-                        ClientID: document.querySelector("#configOptionsContainer #" + "ClientID").value,
-                        ClientSecret: document.querySelector("#configOptionsContainer #" + "ClientSecret").value,
+                        ClientID: "",
+                        ClientSecret: "",
                         ListMonitoredLibraryGuid: []
                     })
                 }
@@ -166,7 +166,7 @@
 
             updateCache: async function (guid)
             {
-                await MyAnimeSyncConfig.createUserConfigInCache(guid);
+                await MyAnimeSyncConfig.createEmptyUserConfigInCache(guid);
 
                 const uConfig = this.configCache.UserConfigs.filter(e => e.Id === guid)[0];
 
@@ -242,14 +242,14 @@
 
             validateConfiguration: async function() {
                 var baseUrl = document.getElementById("jellyfinUrl").value;
-                await fetch(baseUrl + "/MyAnimeSync/testConfig")
+                await fetch(baseUrl + "/MyAnimeSync/testConfig?guid=" + MyAnimeSyncConfig.userSelector.value)
                         .then((response) => response.json())
                         .then((json) => {
                             console.log(json);
                             if (json)
                             {
                                 // If authentication was a success, retrieve tokens!
-                                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, ApiClient.getCurrentUserId()));
+                                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
                                 window.alert("Authentication was a success.")
                             }
                             else
