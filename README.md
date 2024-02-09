@@ -18,6 +18,13 @@ If you ever encounter issues with a specific anime, feel free to create a ticket
    - If you want to use the plugin with the unstable version of Jellyfin, be aware that you might need to manually build the plugin. The release dll might not work on the unstable version.<br/>
    - You might also encounter issues when using the plugin with the unstable version even if it was built manually. I would not recommend it unless absolutely necessary.
 
+2. Install from Jellyfin Catalog
+   1. Go to Dashboard -> Plugins -> Repositories and add a custom repository
+      - For the repository url, use https://raw.githubusercontent.com/iankiller77/MyAnimeSync/main/manifest.json
+      - The repository name can be anything
+   2. Go to catalog and look for MyAnimeSync in the General plugin list.
+   3. Install the plugin and restart the jellyfin server.
+
 2. Manual Install:
    - To manually install the plugin, simply copy the files in the Jellyfin plugin folder. Default should be %UserProfile%\AppData\Local\jellyfin\plugins
 
