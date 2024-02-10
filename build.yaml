@@ -1,7 +1,7 @@
 ---
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
-version: "1.2.1"
+version: "1.2.2"
 targetAbi: "10.8.0.13"
 framework: "net6.0"
 overview: "Synchronise watch status on myanimelist."
