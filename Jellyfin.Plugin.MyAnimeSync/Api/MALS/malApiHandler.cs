@@ -121,14 +121,22 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <returns> The uri that should be used for the api call. </returns>
         public static string? GenerateAuthCodeUrl(UserConfig uConfig)
         {
-            string codeChallenge = GenerateCodeChallenge();
+            string codeChallenge;
+            if (string.IsNullOrEmpty(uConfig.CodeChallenge))
+            {
+                codeChallenge = GenerateCodeChallenge();
+                uConfig.CodeChallenge = codeChallenge;
+                Plugin.Instance?.SaveConfiguration();
+            }
+            else
+            {
+                codeChallenge = uConfig.CodeChallenge;
+            }
+
             if (string.IsNullOrEmpty(uConfig.ClientID))
             {
                 return null;
             }
-
-            uConfig.CodeChallenge = codeChallenge;
-            Plugin.Instance?.SaveConfiguration();
 
             return $"{AuthorisationUrl}?response_type=code&client_id={uConfig.ClientID}&code_challenge={codeChallenge}";
         }

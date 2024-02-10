@@ -55,8 +55,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         [HttpGet("testConfig")]
         public async Task<bool> TestUserConfig([FromQuery(Name = "guid")] Guid guid)
         {
-            UserConfig? uConfig = Plugin.Instance?.Configuration.GetAuthenticatingUserConfig();
-            if (uConfig == null)
+            UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(guid);
+            if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
             {
                 return false;
             }
