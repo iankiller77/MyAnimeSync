@@ -241,10 +241,35 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
             if (entry == null) { return null; }
 
-            Node[] matchingEntries = Array.FindAll(entry, element =>
+            List<Node> matchingEntries = Array.FindAll(entry, element =>
                                                             (element.SearchEntry?.Title?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
-                                                            (element.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false));
-            if (matchingEntries.Length < 1) { return null; }
+                                                            (element.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false)).ToList();
+
+            // If we could not retrieve with complete string, try matching individual words instead.
+            if (matchingEntries.Count < 1)
+            {
+                string[] words = animeName.Split(" ");
+                int mostWordMatched = 0;
+                foreach (Node node in entry)
+                {
+                    int matchedWordCount = words.Count(element =>
+                                                    (node.SearchEntry?.Title?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                                                    (node.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false));
+                    if (matchedWordCount == mostWordMatched)
+                    {
+                        matchingEntries.Add(node);
+                    }
+                    else if (matchedWordCount > mostWordMatched)
+                    {
+                        matchingEntries.Clear();
+                        matchingEntries.Add(node);
+                        mostWordMatched = matchedWordCount;
+                    }
+                }
+
+                // If we did not match all the words, return null.
+                if (mostWordMatched < words.Length) { return null; }
+            }
 
             AnimeSearchEntry? bestMatchingNode = matchingEntries.OrderBy(element => element.SearchEntry?.Title?.Length).FirstOrDefault()?.SearchEntry;
             if (bestMatchingNode == null || bestMatchingNode.ID == null) { return null; }
