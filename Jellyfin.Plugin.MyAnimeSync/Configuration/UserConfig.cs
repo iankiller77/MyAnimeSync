@@ -21,6 +21,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             ClientID = string.Empty;
             ClientSecret = string.Empty;
             CodeChallenge = string.Empty;
+            AllowNSFW = false;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
         }
 
@@ -58,6 +59,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets code challenge.
         /// </summary>
         public string CodeChallenge { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we should allow nsfw entry in anime search.
+        /// </summary>
+        public bool AllowNSFW { get; set; }
 
         /// <summary>
         /// Gets or sets the list of libraries monitored for the user.
