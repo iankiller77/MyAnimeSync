@@ -46,6 +46,16 @@
                                 If the result of this button isn't positive, the plugin will not work for the user.
                             </div>
                         </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="AllowNSFW" type="checkbox" is="emby-checkbox" />
+                                <span>Allow nsfw content in anime search</span>
+                            </label>
+                            <div class="fieldDescription">
+                                This option will permit to retrieve anime tagged as ecchi or hentai.<br>
+                                If you are having issues finding an anime, this option can help. Some false positive may prevent showing non nsfw anime in the normal search.
+                            </div>
+                        </div>
                         <div id="libraryContainer">
                             <h3 class="checkboxListLabel">Checked Libraries:</h3>
                             <div id="CheckedLibraries" class="paperList checkboxList checkboxList-paperList"></div>
@@ -159,6 +169,7 @@
                         Id: guid,
                         ClientID: "",
                         ClientSecret: "",
+                        AllowNSFW: false,
                         ListMonitoredLibraryGuid: []
                     })
                 }

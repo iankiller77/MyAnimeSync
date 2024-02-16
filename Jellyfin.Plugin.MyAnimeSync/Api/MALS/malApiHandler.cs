@@ -221,6 +221,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<int?> GetAnimeID(string animeName, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool nsfwCheck = uConfig.AllowNSFW;
 
             string searchString = animeName;
             if (searchString.Length > 64)
@@ -232,7 +233,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             {
                 { "q", searchString },
                 { "limit", "25" },
-                { "fields", "alternative_titles" }
+                { "fields", "alternative_titles" },
+                { "nsfw", nsfwCheck.ToString() }
             };
 
             JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token).ConfigureAwait(true);
