@@ -191,6 +191,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
                         if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber.Value)
                         {
+                            _logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}", serie, episode.AiredSeasonNumber, entry.Info.StatusInfo.EpisodeWatched);
                             return;
                         }
                     }
