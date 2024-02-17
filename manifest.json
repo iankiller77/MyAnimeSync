@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.3.0.0",
+                "changelog": "1. feat/update_anime_search_to_use_word_based_search\n2. feat/add_option_to_filter_nsfw_content_in_anime_search",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3/myanimesync_1.3.0.0.zip",
+                "checksum": "ae048fa4ddefd52d4242df9cd42a826a",
+                "timestamp": "2024-02-17 00:00:00"
+            },
+            {
                 "version": "1.2.2.0",
                 "changelog": "1. Refactor/UI and user config handling improvement\n2. refactor/only_update_anime_status_if_watch_number_higher",
                 "targetAbi": "10.8.0.13",
