@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -10,12 +11,13 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Entities;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Service
 {
     /// <inheritdoc/>
-    public class OnMarkedService : IServerEntryPoint
+    public class OnMarkedService : IHostedService
     {
         private readonly ILogger<OnMarkedService> _logger;
         private readonly IUserDataManager _userDataManager;
@@ -35,7 +37,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         }
 
         /// <inheritdoc/>
-        public Task RunAsync()
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             _userDataManager.UserDataSaved += OnUserDataMarkedPlayed;
             return Task.CompletedTask;
@@ -208,13 +210,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         /// <summary>
         /// Dispose.
         /// </summary>
@@ -225,6 +220,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             {
                 _userDataManager.UserDataSaved -= OnUserDataMarkedPlayed;
             }
+        }
+
+        /// <inheritdoc/>
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            Dispose(true);
+            return Task.CompletedTask;
         }
     }
 }
