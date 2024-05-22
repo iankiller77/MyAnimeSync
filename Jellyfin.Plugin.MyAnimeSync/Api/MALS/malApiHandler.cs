@@ -38,8 +38,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 throw new AuthenticationException("Could not retrieve provider token");
             }
 
-            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
-            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(reader.ReadToEnd());
+            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
             if (jsonData == null)
             {
                 throw new AuthenticationException("Could not retrieve token from request.");
@@ -59,8 +59,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 throw new AuthenticationException("Authenticated get request returned an error response.");
             }
 
-            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
-            JsonNode? jsonData = JsonObject.Parse(reader.ReadToEnd());
+            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
 
             return jsonData;
         }
@@ -77,8 +77,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 throw new AuthenticationException("Authenticated get request returned an error response.");
             }
 
-            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
-            JsonNode? jsonData = JsonObject.Parse(reader.ReadToEnd());
+            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
 
             return jsonData;
         }
@@ -95,8 +95,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 throw new AuthenticationException("Authenticated patch request returned an error response.");
             }
 
-            StreamReader reader = new StreamReader(response.Content.ReadAsStream());
-            JsonNode? jsonData = JsonObject.Parse(reader.ReadToEnd());
+            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
 
             return jsonData;
         }
