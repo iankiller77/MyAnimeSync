@@ -291,7 +291,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             var values = new Dictionary<string, string?>()
             {
-                { "fields", "id,title,num_episodes,related_anime" }
+                { "fields", "id,title,media_type,num_episodes,related_anime" }
             };
 
             string url = AnimeUrl + "/" + animeID;
