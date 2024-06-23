@@ -140,12 +140,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     while (seasonOffset > 0)
                     {
                         info = await GetAnimeSequel(info, userConfig).ConfigureAwait(true);
-                        if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null)
+                        if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null || info.MediaType == null)
                         {
                             _logger.LogError(
                                 "Could not retrieve expected sequel using season offset for anime : {ID}",
                                 id);
                             return;
+                        }
+
+                        // Ignore anime movie for season offset.
+                        if (info.MediaType == MediaType.Movie)
+                        {
+                            continue;
                         }
 
                         Regex expression = new Regex(".*part ([0-9]+).*", RegexOptions.IgnoreCase);

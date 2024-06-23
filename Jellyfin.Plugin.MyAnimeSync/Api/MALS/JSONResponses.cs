@@ -25,6 +25,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
     }
 
     /// <summary>
+    /// Structure for type of anime media.
+    /// </summary>
+    public static class MediaType
+    {
+        /// <summary>Seasonal Anime.</summary>
+        public const string SeasonalAnime = "tv";
+
+        /// <summary>Anime movie.</summary>
+        public const string Movie = "movie";
+    }
+
+    /// <summary>
     /// Json object respresenting a node.
     /// </summary>
     public class Node
@@ -76,6 +88,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         [JsonPropertyName("title")]
         public string? Title { get; set; }
+
+        /// <summary>
+        /// Gets or sets the media type.
+        /// </summary>
+        [JsonPropertyName("media_type")]
+        public string? MediaType { get; set; }
 
         /// <summary>
         /// Gets or sets the amount of episode for the anime season.
