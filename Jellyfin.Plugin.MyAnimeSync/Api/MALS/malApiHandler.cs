@@ -350,21 +350,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         /// <param name="animeID">The id of the anime. <see cref="int"/>.</param>
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
-        /// <param name="completed">Completion status of the serie.<see cref="bool"/>.</param>
+        /// <param name="status">Watch status of the serie.<see cref="bool"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static async void UpdateUserInfo(int animeID, int episodeNumber, bool completed, UserConfig uConfig)
+        public static async void UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
             var values = new Dictionary<string, string?>()
             {
-                { "num_watched_episodes", string.Empty + episodeNumber }
+                { "num_watched_episodes", string.Empty + episodeNumber },
+                { "status", status }
             };
-
-            if (completed)
-            {
-                values.Add("status", WatchStatus.Completed);
-            }
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
             await SendPatchRequest(url, values, token).ConfigureAwait(true);

@@ -204,14 +204,14 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         }
                     }
 
-                    bool completed = false;
+                    string status = WatchStatus.Watching;
                     if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
                     {
-                        completed = true;
+                        status = WatchStatus.Completed;
                     }
 
                     // Update anime status
-                    MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber.Value, completed, userConfig);
+                    MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber.Value, status, userConfig);
                 }
             }
         }
