@@ -54,7 +54,33 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 return null;
             }
 
-            RelatedAnime? relatedAnime = Array.Find(nodes, element => element.RelationType == "sequel");
+            // If we have more than one sequel, one of them is a movie. Always return the tv version.
+            RelatedAnime[]? relatedAnimes = Array.FindAll(nodes, element => element.RelationType == "sequel");
+            RelatedAnime? relatedAnime = null;
+            if (relatedAnimes.Length == 1)
+            {
+                relatedAnime = relatedAnimes[0];
+            }
+            else
+            {
+                foreach (RelatedAnime anime in relatedAnimes)
+                {
+                    if (anime == null || anime.SearchEntry == null || anime.SearchEntry.ID == null)
+                    {
+                        _logger.LogError(
+                        "Could not retrieve sequel data for anime with multiple sequel : {Title}",
+                        info.Title);
+                        return null;
+                    }
+
+                    AnimeData? animeData = await MalApiHandler.GetAnimeInfo(anime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
+                    if (animeData != null && animeData.MediaType == MediaType.SeasonalAnime)
+                    {
+                        return animeData;
+                    }
+                }
+            }
+
             if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
             {
                 _logger.LogError(
