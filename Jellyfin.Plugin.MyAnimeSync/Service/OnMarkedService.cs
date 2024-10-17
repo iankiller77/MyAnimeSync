@@ -43,12 +43,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return Task.CompletedTask;
         }
 
-        private async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig)
+        private static async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig, ILogger logger)
         {
             RelatedAnime[]? nodes = info.RelatedNodes;
             if (nodes == null)
             {
-                _logger.LogError(
+                logger.LogError(
                 "Could not retrieve related animes for anime : {Title}",
                 info.Title);
                 return null;
@@ -67,7 +67,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 {
                     if (anime == null || anime.SearchEntry == null || anime.SearchEntry.ID == null)
                     {
-                        _logger.LogError(
+                        logger.LogError(
                         "Could not retrieve sequel data for anime with multiple sequel : {Title}",
                         info.Title);
                         return null;
@@ -83,7 +83,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
             if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
             {
-                _logger.LogError(
+                logger.LogError(
                 "Could not retrieve sequel for anime : {Title}",
                 info.Title);
                 return null;
@@ -99,8 +99,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
         /// <param name="userConfig">The user config. <see cref="UserConfig"/>.</param>
+        /// <param name="logger">The logger. <see cref="ILogger"/>.</param>
         /// <returns> The task. </returns>
-        public async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig)
+        public static async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
             // Update tokens if needed before using the api.
             await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
@@ -108,7 +109,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             int? id = await MalApiHandler.GetAnimeID(serie, userConfig).ConfigureAwait(true);
             if (id == null)
             {
-                _logger.LogError(
+                logger.LogError(
                     "Could not retrieve id for anime : {AnimeName}",
                     serie);
                 return false;
@@ -117,7 +118,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             AnimeData? info = await MalApiHandler.GetAnimeInfo(id.Value, userConfig).ConfigureAwait(true);
             if (info == null || info.ID == null || info.EpisodeCount == null)
             {
-                _logger.LogError(
+                logger.LogError(
                     "Could not retrieve anime info for id : {ID}",
                     id);
                 return false;
@@ -128,10 +129,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             // If we have a specified anime season.
             while (seasonOffset > 0)
             {
-                info = await GetAnimeSequel(info, userConfig).ConfigureAwait(true);
+                info = await GetAnimeSequel(info, userConfig, logger).ConfigureAwait(true);
                 if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null || info.MediaType == null)
                 {
-                    _logger.LogError(
+                    logger.LogError(
                         "Could not retrieve expected sequel using season offset for anime : {ID}",
                         id);
                     return false;
@@ -163,10 +164,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             while (info.EpisodeCount > 0 && info.EpisodeCount < episodeNumber)
             {
                 episodeNumber -= info.EpisodeCount.Value;
-                info = await GetAnimeSequel(info, userConfig).ConfigureAwait(true);
+                info = await GetAnimeSequel(info, userConfig, logger).ConfigureAwait(true);
                 if (info == null || info.ID == null || info.EpisodeCount == null)
                 {
-                    _logger.LogError(
+                    logger.LogError(
                         "Could not retrieve expected sequel using episode offset for anime : {ID}",
                         id);
                     return false;
@@ -177,7 +178,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             UserAnimeInfo entry = await MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).ConfigureAwait(true);
             if (!entry.SuccessStatus)
             {
-                _logger.LogError(
+                logger.LogError(
                         "Could not parse anime list for user : {User}",
                         userConfig.Id);
                 return false;
@@ -188,7 +189,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
                 if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber)
                 {
-                    _logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}", serie, seasonNumber, entry.Info.StatusInfo.EpisodeWatched);
+                    logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}", serie, seasonNumber, entry.Info.StatusInfo.EpisodeWatched);
                     return true;
                 }
             }
@@ -252,7 +253,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    bool success = await UpdateAnimeList(serie, episodeNumber.Value, episode.AiredSeasonNumber, userConfig).ConfigureAwait(true);
+                    bool success = await UpdateAnimeList(serie, episodeNumber.Value, episode.AiredSeasonNumber, userConfig, _logger).ConfigureAwait(true);
+                    if (!success)
+                    {
+                        userConfig.UpdateFailEntries(serie, episodeNumber.Value, episode.AiredSeasonNumber ?? 1);
+                    }
                 }
             }
         }
