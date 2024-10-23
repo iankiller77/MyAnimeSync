@@ -60,6 +60,10 @@
                             <h3 class="checkboxListLabel">Checked Libraries:</h3>
                             <div id="CheckedLibraries" class="paperList checkboxList checkboxList-paperList"></div>
                         </div>
+                        <div>
+                            <h3 class="checkboxListLabel">Failed Anime Updates:</h3>
+                            <div id="FailedAnimeList" class="paperList checkboxList checkboxList-paperList"></div>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -134,6 +138,35 @@
                         div.appendChild(label);
                     }
                 })
+
+                var failedUpdateDiv = document.getElementById("FailedAnimeList");
+                failedUpdateDiv.innerHTML = "";
+                var div = document.createElement("div");
+                div.setAttribute("data-role", "controlgroup");
+                failedUpdateDiv.appendChild(div);
+                var result = userConfig.FailedUpdates;
+                for (var i = 0; i < result.length; i++)
+                {
+                    var label = document.createElement("label");
+                    var span = document.createElement("span");
+                    span.style.marginRight = "10px";
+                    span.appendChild(document.createTextNode(result[i].Serie + " - Season : " + result[i].SeasonNumber + " - Ep : " + result[i].EpisodeNumber));
+                    label.appendChild(span);
+
+                    var button = document.createElement("button");
+                    button.setAttribute("type", "button");
+                    button.id = result[i].Serie;
+                    button.setAttribute("season", result[i].SeasonNumber);
+                    button.setAttribute("onclick", "MyAnimeSyncConfig.deleteFailedEntry(this.id, this.getAttribute('season'))");
+
+                    button.textContent = "Delete";
+                    label.appendChild(button);
+
+                    br = document.createElement("br");
+                    label.append(br);
+
+                    div.appendChild(label);
+                }
             },
 
             populateOptionsContainer: async function (userConfig) {
@@ -156,6 +189,20 @@
                         passwordInput.value = userConfig[key];
                     }
                 }
+            },
+
+            deleteFailedEntry: async function (serie, season)
+            {
+                console.log("Deleting this : " + serie + " / season : " + season);
+
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                uConfig.FailedUpdates = uConfig.FailedUpdates.filter(item => !(item.Serie == serie && item.SeasonNumber == season));
+
+                console.log(uConfig.FailedUpdates);
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
             },
 
             // This create an empty user config in cache if it does not already exists.
