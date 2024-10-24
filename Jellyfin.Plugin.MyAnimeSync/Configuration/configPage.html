@@ -153,14 +153,25 @@
                     span.appendChild(document.createTextNode(result[i].Serie + " - Season : " + result[i].SeasonNumber + " - Ep : " + result[i].EpisodeNumber));
                     label.appendChild(span);
 
-                    var button = document.createElement("button");
-                    button.setAttribute("type", "button");
-                    button.id = result[i].Serie;
-                    button.setAttribute("season", result[i].SeasonNumber);
-                    button.setAttribute("onclick", "MyAnimeSyncConfig.deleteFailedEntry(this.id, this.getAttribute('season'))");
+                    // Create retry button for failed update entry
+                    var retryButton = document.createElement("button");
+                    retryButton.setAttribute("type", "button");
+                    retryButton.id = result[i].Serie;
+                    retryButton.setAttribute("season", result[i].SeasonNumber);
+                    retryButton.setAttribute("episode", result[i].EpisodeNumber);
+                    retryButton.style.marginRight = "10px";
+                    retryButton.setAttribute("onclick", "MyAnimeSyncConfig.retryUpdate(this.id, this.getAttribute('season'), this.getAttribute('episode'))");
+                    retryButton.textContent = "Retry";
+                    label.appendChild(retryButton);
 
-                    button.textContent = "Delete";
-                    label.appendChild(button);
+                    // Create delete button for failed update entry
+                    var deleteButton = document.createElement("button");
+                    deleteButton.setAttribute("type", "button");
+                    deleteButton.id = result[i].Serie;
+                    deleteButton.setAttribute("season", result[i].SeasonNumber);
+                    deleteButton.setAttribute("onclick", "MyAnimeSyncConfig.deleteFailedEntry(this.id, this.getAttribute('season'))");
+                    deleteButton.textContent = "Delete";
+                    label.appendChild(deleteButton);
 
                     br = document.createElement("br");
                     label.append(br);
@@ -203,6 +214,23 @@
 
                 await MyAnimeSyncConfig.saveConfig(guid);
                 await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
+            },
+
+            retryUpdate: async function (serie, season, ep)
+            {
+                console.log("Retrying to update entry : " + serie + " - season : " + season + " - ep : " + ep);
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                var guid = MyAnimeSyncConfig.userSelector.value
+                await fetch(baseUrl + "/MyAnimeSync/retryUpdate?guid=" + guid + "&serie=" + serie + "&season=" + season + "&episode=" + ep)
+                        .then((response) => response.json())
+                        .then((json) => {
+                            console.log(json);
+                            if (json)
+                            {
+                                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+                            }
+                        }
+                );
             },
 
             // This create an empty user config in cache if it does not already exists.

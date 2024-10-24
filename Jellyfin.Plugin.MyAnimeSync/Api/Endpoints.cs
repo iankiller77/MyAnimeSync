@@ -4,7 +4,9 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
+using Jellyfin.Plugin.MyAnimeSync.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 {
@@ -15,6 +17,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
     [Route("MyAnimeSync")]
     public class Endpoints : ControllerBase
     {
+        private readonly ILogger<Endpoints> _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Endpoints"/> class.
+        /// </summary>
+        /// <param name="logger">Instance of the <see cref="ILogger{Endpoints}"/> interface.</param>
+        public Endpoints(ILogger<Endpoints> logger)
+        {
+            _logger = logger;
+        }
+
         /// <summary>
         /// Retrieve the code from the callback url for the user authentification.
         /// </summary>
@@ -68,6 +81,39 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Try to update user watch list with specified entry info.
+        /// </summary>
+        /// <param name="guid">The user config. <see cref="Guid"/>.</param>
+        /// <param name="serie">The name of the serie. <see cref="string"/>.</param>
+        /// <param name="season">The season of the entry. <see cref="int"/>.</param>
+        /// <param name="episode">The episode of the entry. <see cref="int"/>.</param>
+        /// <returns>Return the success status of the request.</returns>
+        [HttpGet("retryUpdate")]
+        public async Task<bool> RetryUpdate([FromQuery] Guid guid, [FromQuery] string serie, [FromQuery] int season, [FromQuery] int episode)
+        {
+            UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(guid);
+            if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
+            {
+                return false;
+            }
+
+            bool success = await OnMarkedService.UpdateAnimeList(serie, season, episode, uConfig, _logger).ConfigureAwait(true);
+            if (success)
+            {
+                UpdateEntry? entry = uConfig.GetUpdateEntry(serie, season);
+                if (entry == null)
+                {
+                    _logger.LogError("Could not retrieve UpdateEntry while trying to delete failed entry from list.");
+                    return false;
+                }
+
+                uConfig.UpdateRetrySuccess(entry);
+            }
+
+            return success;
         }
     }
 }

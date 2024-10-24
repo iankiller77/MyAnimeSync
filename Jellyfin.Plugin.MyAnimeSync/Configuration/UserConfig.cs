@@ -138,5 +138,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         {
             UpdateFailEntries(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, entry.RetryCount + 1);
         }
+
+        /// <summary>
+        /// Retrieve the update entry.
+        /// </summary>
+        /// <param name="serie">The name of the serie.</param>
+        /// <param name="season">The season of the entrie.</param>
+        /// <returns>The update entry.</returns>
+        public UpdateEntry? GetUpdateEntry(string serie, int season)
+        {
+            return FailedUpdates.FirstOrDefault<UpdateEntry>(item => item.Serie == serie && item.SeasonNumber == season);
+        }
     }
 }
