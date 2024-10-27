@@ -130,7 +130,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             while (seasonOffset > 0)
             {
                 info = await GetAnimeSequel(info, userConfig, logger).ConfigureAwait(true);
-                if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null || info.MediaType == null)
+                if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null || info.MediaType == null || info.AlternativeTitles == null || info.AlternativeTitles.EnglishTitle == null)
                 {
                     logger.LogError(
                         "Could not retrieve expected sequel using season offset for anime : {ID}",
@@ -144,8 +144,21 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     continue;
                 }
 
+                // Check if it's the first part of a season with original title.
                 Regex expression = new Regex(".*part ([0-9]+).*", RegexOptions.IgnoreCase);
                 Match match = expression.Match(info.Title);
+                if (match.Success)
+                {
+                    int partNumber;
+                    _ = int.TryParse(match.Groups[1].Value, out partNumber);
+                    if (partNumber > 1)
+                    {
+                        continue;
+                    }
+                }
+
+                // Check if it's the first part of a season with english title.
+                match = expression.Match(info.AlternativeTitles.EnglishTitle);
                 if (match.Success)
                 {
                     int partNumber;
