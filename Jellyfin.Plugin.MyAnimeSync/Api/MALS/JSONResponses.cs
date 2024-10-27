@@ -106,6 +106,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         [JsonPropertyName("related_anime")]
         public RelatedAnime[]? RelatedNodes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the alternative anime titles.
+        /// </summary>
+        [JsonPropertyName("alternative_titles")]
+        public AlternativeTitles? AlternativeTitles { get; set; }
     }
 
     /// <summary>
@@ -118,6 +124,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         [JsonPropertyName("en")]
         public string? EnglishTitle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the synonym title.
+        /// </summary>
+        [JsonPropertyName("synonyms")]
+        public string[]? Synonyms { get; set; }
     }
 
     /// <summary>
