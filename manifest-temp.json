@@ -1,0 +1,68 @@
+[
+    {
+        "guid": "28612bb6-e3ab-4099-a682-f413d4ca19d3",
+        "name": "MyAnimeSync",
+        "description": "Jellyfin plugin to synchronize anime watch status on myanimelist.net\n",
+        "overview": "Update user watch status on myanimelist.net",
+        "owner": "iankiller77",
+        "category": "General",
+        "versions": [
+            {
+                "version": "1.4.0.0",
+                "changelog": "New feature to monitor and retry failed updates.\nSearch improvement.\n1. feature/Update_sequel_search_to_prioritize_anime_over_movies\n2. Feature/add fail update list and retry failed updates\n3. feature/Also_check_english_title_for_season_part_check",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.0/myanimesync_1.4.0.0.zip",
+                "checksum": "f7f531cf2bda600b6089ab93afff9b00",
+                "timestamp": "2024-06-23T00:00:00Z"
+            },
+            {
+                "version": "1.3.2.0",
+                "changelog": "1. bug/wrong_anime_info_when_anime_has_a_movie_has_a_sequel\n2. feature/set_anime_to_watching_when_updating_existing_entries",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3.2/myanimesync_1.3.2.0.zip",
+                "checksum": "9b87d1d11eef52a897dc576b4bf9d84b",
+                "timestamp": "2024-06-23T00:00:00Z"
+            },
+            {
+                "version": "1.3.1.0",
+                "changelog": "1. feature/update_to_new_jellyfin_version_10.9",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3.1/myanimesync_1.3.1.0.zip",
+                "checksum": "77563d5c6e09cff4efae885df7d1aae2",
+                "timestamp": "2024-05-22T00:00:00Z"
+            },
+            {
+                "version": "1.3.0.0",
+                "changelog": "1. feat/update_anime_search_to_use_word_based_search\n2. feat/add_option_to_filter_nsfw_content_in_anime_search",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3/myanimesync_1.3.0.0.zip",
+                "checksum": "ae048fa4ddefd52d4242df9cd42a826a",
+                "timestamp": "2024-02-17T00:00:00Z"
+            },
+            {
+                "version": "1.2.2.0",
+                "changelog": "1. Refactor/UI and user config handling improvement\n2. refactor/only_update_anime_status_if_watch_number_higher",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.2.2/myanimesync_1.2.2.0.zip",
+                "checksum": "4023affa2100ee18d93e9c3b4ce462f5",
+                "timestamp": "2024-02-09T00:00:00Z"
+            },
+            {
+                "version": "1.2.1.0",
+                "changelog": "1. bug/Anime_Name_Exceeding_Max_Search_Lenght\n",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.2.1/myanimesync_1.2.1.0.zip",
+                "checksum": "152f2cd8e6c9139563e3423cb2858a52",
+                "timestamp": "2024-01-31T00:00:00Z"
+            },
+            {
+                "version": "1.0.0.0",
+                "changelog": "Initial release.\n",
+                "targetAbi": "10.8.0.13",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.0/myanimesync_1.0.0.0.zip",
+                "checksum": "e4d886b5c18e0a8ee488ca5b0feb6b09",
+                "timestamp": "2024-01-24T00:00:00Z"
+            }
+        ]
+    }
+]
