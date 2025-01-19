@@ -100,7 +100,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            bool success = await OnMarkedService.UpdateAnimeList(serie, season, episode, uConfig, _logger).ConfigureAwait(true);
+            bool success = await OnMarkedService.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
             if (success)
             {
                 UpdateEntry? entry = uConfig.GetUpdateEntry(serie, season);
