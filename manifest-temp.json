@@ -12,7 +12,7 @@
                 "changelog": "Improved words base search to ignore special characters. This fix an issue with sites using special characters that are not used on myanimelist.net.",
                 "targetAbi": "10.9.2",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.1/myanimesync_1.4.1.0.zip",
-                "checksum": "40eba41038062b66c97ae1aa8572b045",
+                "checksum": "9c16addefa425825b9f8bfbcfbd69fa4",
                 "timestamp": "2025-01-18T00:00:00Z"
             },
             {
