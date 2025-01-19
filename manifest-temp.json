@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.4.1.1",
+                "changelog": "Fixed an issue where retry button would invert episode and season number when trying to update missed anime.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.1.1/myanimesync_1.4.1.1.zip",
+                "checksum": "a111884d3ea1a75b06a3ac3142432b04",
+                "timestamp": "2025-01-18T10:41:00Z"
+            },
+            {
                 "version": "1.4.1.0",
                 "changelog": "Improved words base search to ignore special characters. This fix an issue with sites using special characters that are not used on myanimelist.net.",
                 "targetAbi": "10.9.2",
