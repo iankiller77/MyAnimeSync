@@ -10,6 +10,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -213,6 +214,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         }
 
         /// <summary>
+        /// Remove special characters from a string.
+        /// </summary>
+        /// <param name="str">The string to edit.</param>
+        /// <returns>The string with no special characters.</returns>
+        public static string RemoveSpecialCharacters(string str)
+        {
+            return Regex.Replace(str, "[^a-zA-Z0-9\\ _.]+", string.Empty, RegexOptions.Compiled);
+        }
+
+        /// <summary>
         /// Retrieve the anime id associated with a tittle.
         /// </summary>
         /// <param name="animeName">The user config. <see cref="string"/>.</param>
@@ -250,10 +261,26 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             // If we could not retrieve with complete string, try matching individual words instead.
             if (matchingEntries.Count < 1)
             {
-                string[] words = animeName.Split(" ");
+                // Remove special characters
+                string formatedName = RemoveSpecialCharacters(animeName);
+                string[] words = formatedName.Split(" ");
                 int mostWordMatched = 0;
                 foreach (Node node in entry)
                 {
+                    // Remove special character if search entry is defined.
+                    if (node.SearchEntry != null)
+                    {
+                        if (node.SearchEntry.Title != null)
+                        {
+                            node.SearchEntry.Title = RemoveSpecialCharacters(node.SearchEntry.Title);
+                        }
+
+                        if (node.SearchEntry.AlternativeTitles != null && node.SearchEntry.AlternativeTitles.EnglishTitle != null)
+                        {
+                            node.SearchEntry.AlternativeTitles.EnglishTitle = RemoveSpecialCharacters(node.SearchEntry.AlternativeTitles.EnglishTitle);
+                        }
+                    }
+
                     int matchedWordCount = words.Count(element =>
                                                     (node.SearchEntry?.Title?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
                                                     (node.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false));
