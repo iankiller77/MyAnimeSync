@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.4.1.0",
+                "changelog": "Improved words base search to ignore special characters. This fix an issue with sites using special characters that are not used on myanimelist.net.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.1/myanimesync_1.4.1.0.zip",
+                "checksum": "40eba41038062b66c97ae1aa8572b045",
+                "timestamp": "2025-01-18T00:00:00Z"
+            },
+            {
                 "version": "1.4.0.0",
                 "changelog": "New feature to monitor and retry failed updates.\nSearch improvement.\n1. feature/Update_sequel_search_to_prioritize_anime_over_movies\n2. Feature/add fail update list and retry failed updates\n3. feature/Also_check_english_title_for_season_part_check",
                 "targetAbi": "10.9.2",
