@@ -7,13 +7,45 @@
         "owner": "iankiller77",
         "category": "General",
         "versions": [
+			{
+                "version": "1.4.2.0",
+                "changelog": "Added an option to delete a user config.\nFixed a bug where incomplete config would cause the token update task to fail.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.2.0/myanimesync_1.4.2.0.zip",
+                "checksum": "6cc5826bc5ce162ca3ca2b39a92408b6",
+                "timestamp": "2025-05-01T19:35:00Z"
+            },
+            {
+                "version": "1.4.1.1",
+                "changelog": "Fixed an issue where retry button would invert episode and season number when trying to update missed anime.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.1.1/myanimesync_1.4.1.1.zip",
+                "checksum": "a111884d3ea1a75b06a3ac3142432b04",
+                "timestamp": "2025-01-18T10:41:00Z"
+            },
+            {
+                "version": "1.4.1.0",
+                "changelog": "Improved words base search to ignore special characters. This fix an issue with sites using special characters that are not used on myanimelist.net.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.1/myanimesync_1.4.1.0.zip",
+                "checksum": "9c16addefa425825b9f8bfbcfbd69fa4",
+                "timestamp": "2025-01-18T00:00:00Z"
+            },
+            {
+                "version": "1.4.0.0",
+                "changelog": "New feature to monitor and retry failed updates.\nSearch improvement.\n1. feature/Update_sequel_search_to_prioritize_anime_over_movies\n2. Feature/add fail update list and retry failed updates\n3. feature/Also_check_english_title_for_season_part_check",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.0/myanimesync_1.4.0.0.zip",
+                "checksum": "f7f531cf2bda600b6089ab93afff9b00",
+                "timestamp": "2024-06-23T00:00:00Z"
+            },
             {
                 "version": "1.3.2.0",
                 "changelog": "1. bug/wrong_anime_info_when_anime_has_a_movie_has_a_sequel\n2. feature/set_anime_to_watching_when_updating_existing_entries",
                 "targetAbi": "10.9.2",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3.2/myanimesync_1.3.2.0.zip",
                 "checksum": "9b87d1d11eef52a897dc576b4bf9d84b",
-                "timestamp": "2024-06-23 00:00:00"
+                "timestamp": "2024-06-23T00:00:00Z"
             },
             {
                 "version": "1.3.1.0",
@@ -21,7 +53,7 @@
                 "targetAbi": "10.9.2",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3.1/myanimesync_1.3.1.0.zip",
                 "checksum": "77563d5c6e09cff4efae885df7d1aae2",
-                "timestamp": "2024-05-22 00:00:00"
+                "timestamp": "2024-05-22T00:00:00Z"
             },
             {
                 "version": "1.3.0.0",
@@ -29,7 +61,7 @@
                 "targetAbi": "10.8.0.13",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.3/myanimesync_1.3.0.0.zip",
                 "checksum": "ae048fa4ddefd52d4242df9cd42a826a",
-                "timestamp": "2024-02-17 00:00:00"
+                "timestamp": "2024-02-17T00:00:00Z"
             },
             {
                 "version": "1.2.2.0",
@@ -37,7 +69,7 @@
                 "targetAbi": "10.8.0.13",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.2.2/myanimesync_1.2.2.0.zip",
                 "checksum": "4023affa2100ee18d93e9c3b4ce462f5",
-                "timestamp": "2024-02-09 00:00:00"
+                "timestamp": "2024-02-09T00:00:00Z"
             },
             {
                 "version": "1.2.1.0",
@@ -45,7 +77,7 @@
                 "targetAbi": "10.8.0.13",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.2.1/myanimesync_1.2.1.0.zip",
                 "checksum": "152f2cd8e6c9139563e3423cb2858a52",
-                "timestamp": "2024-01-31 00:00:00"
+                "timestamp": "2024-01-31T00:00:00Z"
             },
             {
                 "version": "1.0.0.0",
@@ -53,7 +85,7 @@
                 "targetAbi": "10.8.0.13",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.0/myanimesync_1.0.0.0.zip",
                 "checksum": "e4d886b5c18e0a8ee488ca5b0feb6b09",
-                "timestamp": "2024-01-24 00:00:00"
+                "timestamp": "2024-01-24T00:00:00Z"
             }
         ]
     }
