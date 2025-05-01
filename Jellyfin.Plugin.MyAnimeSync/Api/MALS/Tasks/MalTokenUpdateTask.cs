@@ -50,7 +50,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
 
             foreach (UserConfig uConfig in configs)
             {
-                await MalApiHandler.RefreshTokens(uConfig).ConfigureAwait(false);
+                if (!(string.IsNullOrEmpty(uConfig.ClientID) || string.IsNullOrEmpty(uConfig.ClientSecret) || string.IsNullOrEmpty(uConfig.RefreshToken)))
+                {
+                    await MalApiHandler.RefreshTokens(uConfig).ConfigureAwait(false);
+                }
             }
         }
 

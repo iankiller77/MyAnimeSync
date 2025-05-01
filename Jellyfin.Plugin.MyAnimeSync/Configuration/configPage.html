@@ -96,15 +96,11 @@
             },
 
             onSelectorChange: async function () {
-                await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
             },
 
             loadConfig: async function (user, config) {
-                if (config != null) {
-                    this.configCache = config;
-                } else {
-                    config = this.configCache;
-                }
+                this.configCache = config
 
                 // Set expected value for server url
                 document.getElementById("jellyfinUrl").value = ApiClient.serverAddress();
@@ -250,7 +246,8 @@
                         ClientID: "",
                         ClientSecret: "",
                         AllowNSFW: false,
-                        ListMonitoredLibraryGuid: []
+                        ListMonitoredLibraryGuid: [],
+                        FailedUpdates: []
                     })
                 }
             },
@@ -283,6 +280,7 @@
                 }
             },
 
+            // Update cache flag to false implies a possible delete
             saveConfig: async function (guid, updateCacheFlag = true) {
                 if (updateCacheFlag)
                 {
@@ -303,6 +301,7 @@
 
                     this.configCache.UserConfigs = this.configCache.UserConfigs.filter(item => !(item.Id === guid));
                     await MyAnimeSyncConfig.saveConfig(guid, false);
+                    location.reload()
                 }
             },
 
@@ -345,24 +344,36 @@
                 }
             },
 
-            validateConfiguration: async function() {
+            testConfig: async function()
+            {
                 var baseUrl = document.getElementById("jellyfinUrl").value;
-                await fetch(baseUrl + "/MyAnimeSync/testConfig?guid=" + MyAnimeSyncConfig.userSelector.value)
+                return await fetch(baseUrl + "/MyAnimeSync/testConfig?guid=" + MyAnimeSyncConfig.userSelector.value)
                         .then((response) => response.json())
                         .then((json) => {
-                            console.log(json);
                             if (json)
                             {
-                                // If authentication was a success, retrieve tokens!
-                                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
-                                window.alert("Authentication was a success.")
+                                return true
                             }
                             else
                             {
-                                window.alert("Failed authentication.")
+                                return false
                             }
                         }
                     );
+            },
+
+            validateConfiguration: async function() {
+                success = await this.testConfig()
+                if (success)
+                {
+                    // If authentication was a success, retrieve tokens!
+                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+                    window.alert("Authentication was a success.")
+                }
+                else
+                {
+                    window.alert("Failed authentication.")
+                }
             }
         }
 
@@ -379,7 +390,17 @@
             .addEventListener('submit', function (e) {
                 e.preventDefault();
                 Dashboard.showLoadingMsg();
-                MyAnimeSyncConfig.saveConfig(MyAnimeSyncConfig.userSelector.value);
+                MyAnimeSyncConfig.testConfig()
+                .then((success) => {
+                    if (success)
+                    {
+                        MyAnimeSyncConfig.saveConfig(MyAnimeSyncConfig.userSelector.value);
+                    }
+                    else
+                    {
+                        window.alert("Trying to save invalid config, make sure to complete the authentication process and validate that the config is valid.")
+                    }
+                })
                 Dashboard.hideLoadingMsg();
             });
     </script>
