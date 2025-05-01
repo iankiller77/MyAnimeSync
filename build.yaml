@@ -1,7 +1,7 @@
 ---
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
-version: "1.4.1.1"
+version: "1.4.2.0"
 targetAbi: "10.9.2"
 framework: "net8.0"
 overview: "Synchronise watch status on myanimelist."
@@ -13,4 +13,4 @@ owner: "iankiller77"
 artifacts:
 - "Jellyfin.Plugin.MyAnimeSync.dll"
 changelog: >
-  Release for version 1.4.1.1
+  Release for version 1.4.2.0
