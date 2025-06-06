@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         private readonly ILogger<OnMarkedService> _logger;
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
+        private static readonly object CheckAndUpdateLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OnMarkedService"/> class.
@@ -187,35 +189,41 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
             }
 
-            // Retrieve anime status in user library.
-            UserAnimeInfo entry = await MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).ConfigureAwait(true);
-            if (!entry.SuccessStatus)
+            // Only check and update user library while nothing is currently being updated.
+            lock (CheckAndUpdateLock)
             {
-                logger.LogError(
-                        "Could not parse anime list for user : {User}",
-                        userConfig.Id);
-                return false;
-            }
-
-            if (entry.Info != null && entry.Info.StatusInfo != null)
-            {
-                // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
-                if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber)
+#pragma warning disable CA1849
+                // Retrieve anime status in user library.
+                UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
+#pragma warning restore CA1849
+                if (!entry.SuccessStatus)
                 {
-                    logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}", serie, seasonNumber, entry.Info.StatusInfo.EpisodeWatched);
-                    return true;
+                    logger.LogError(
+                            "Could not parse anime list for user : {User}",
+                            userConfig.Id);
+                    return false;
                 }
-            }
 
-            string status = WatchStatus.Watching;
-            if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
-            {
-                status = WatchStatus.Completed;
-            }
+                if (entry.Info != null && entry.Info.StatusInfo != null)
+                {
+                    // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
+                    if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber)
+                    {
+                        logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}, watch status {LastWatched}", serie, seasonNumber, episodeNumber, entry.Info.StatusInfo.EpisodeWatched);
+                        return true;
+                    }
+                }
 
-            // Update anime status
-            MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig);
-            return true;
+                string status = WatchStatus.Watching;
+                if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
+                {
+                    status = WatchStatus.Completed;
+                }
+
+                // Update anime status
+                MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).ConfigureAwait(true);
+                return true;
+            }
         }
 
         /// <summary>
