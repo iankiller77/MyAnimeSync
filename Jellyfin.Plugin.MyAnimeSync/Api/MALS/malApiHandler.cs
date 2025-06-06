@@ -379,7 +379,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="status">Watch status of the serie.<see cref="bool"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
-        public static async void UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
+        /// <returns>A task.</returns>
+        public static async Task UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
