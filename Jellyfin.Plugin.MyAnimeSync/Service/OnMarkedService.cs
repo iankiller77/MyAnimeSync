@@ -126,6 +126,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 return false;
             }
 
+            if (seasonNumber < 1)
+            {
+                logger.LogInformation("Ignoring season 0 for anime : {Serie}", serie);
+                return true;
+            }
+
             int seasonOffset = seasonNumber - 1 ?? 0;
 
             // If we have a specified anime season.
