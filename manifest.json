@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
 	    {
+                "version": "1.4.2.2",
+                "changelog": "Fixed an issue with bulk update causing wrong episode number to be updated.",
+                "targetAbi": "10.9.2",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.2.2/myanimesync_1.4.2.2.zip",
+                "checksum": "f2c0384475d673ca6e3711f2466fe55a",
+                "timestamp": "2025-06-10T18:36:00Z"
+            },
+	    {
                 "version": "1.4.2.1",
                 "changelog": "Fixed an issue with bulk update causing wrong episode number to be updated.",
                 "targetAbi": "10.9.2",
