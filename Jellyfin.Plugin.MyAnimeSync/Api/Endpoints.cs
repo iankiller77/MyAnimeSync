@@ -218,20 +218,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            bool success = await OnMarkedService.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
-            if (success)
-            {
-                UpdateEntry? entry = uConfig.GetUpdateEntry(serie, season);
-                if (entry == null)
-                {
-                    _logger.LogError("Could not retrieve UpdateEntry while trying to delete failed entry from list.");
-                    return false;
-                }
-
-                uConfig.UpdateRetrySuccess(entry);
-            }
-
-            return success;
+            return await OnMarkedService.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
         }
     }
 }

@@ -57,15 +57,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
                 {
                     if (entry.RetryCount < 5)
                     {
-                        bool success = await OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger).ConfigureAwait(true);
-                        if (!success)
-                        {
-                            uConfig.UpdateRetryFailed(entry);
-                        }
-                        else
-                        {
-                            uConfig.UpdateRetrySuccess(entry);
-                        }
+                        await OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger).ConfigureAwait(false);
                     }
                 }
             }
