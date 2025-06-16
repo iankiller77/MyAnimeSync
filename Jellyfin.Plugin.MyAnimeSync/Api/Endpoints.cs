@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Authentication;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -103,102 +104,105 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         [HttpGet("fullUpdate")]
         public async Task FullLibraryUpdate([FromQuery(Name = "guid")] Guid userID)
         {
-            UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
-            if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
+            await Task.Run(() =>
             {
-                return;
-            }
-
-            List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders().FindAll(element => uConfig.ListMonitoredLibraryGuid.Contains(Guid.Parse(element.ItemId)));
-            List<Folder> watchedFolders = new List<Folder>();
-            foreach (VirtualFolderInfo virtualFolder in virtualFolders)
-            {
-                var folderItem = _libraryManager.FindByPath(virtualFolder.Locations[0], true);
-                if (folderItem is Folder)
+                UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
+                if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
                 {
-                    Folder? folder = folderItem as Folder;
-                    if (folder == null)
-                    {
-                        continue;
-                    }
-
-                    watchedFolders.Add(folder);
+                    return;
                 }
-            }
 
-            foreach (Folder folder in watchedFolders)
-            {
-                /*
-                    TODO: Investigate improving algorithm to avoid updating all episodes when season is not provided.
-                            Also investigate improving overall code to reuse update logic for multiple anime at the same time.
-                            EX: Create of a list of all animes to update before updating and creating a batch update function to optimize the amount of update requests and reuse code.
-                */
-
-                foreach (var serieItem in folder.Children)
+                List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders().FindAll(element => uConfig.ListMonitoredLibraryGuid.Contains(Guid.Parse(element.ItemId)));
+                List<Folder> watchedFolders = new List<Folder>();
+                foreach (VirtualFolderInfo virtualFolder in virtualFolders)
                 {
-                    if (serieItem is Series)
+                    var folderItem = _libraryManager.FindByPath(virtualFolder.Locations[0], true);
+                    if (folderItem is Folder)
                     {
-                        Series? serie = serieItem as Series;
-                        if (serie == null)
+                        Folder? folder = folderItem as Folder;
+                        if (folder == null)
                         {
                             continue;
                         }
 
-                        foreach (var item in serie.Children)
+                        watchedFolders.Add(folder);
+                    }
+                }
+
+                foreach (Folder folder in watchedFolders)
+                {
+                    /*
+                        TODO: Investigate improving algorithm to avoid updating all episodes when season is not provided.
+                                Also investigate improving overall code to reuse update logic for multiple anime at the same time.
+                                EX: Create of a list of all animes to update before updating and creating a batch update function to optimize the amount of update requests and reuse code.
+                    */
+
+                    foreach (var serieItem in folder.Children)
+                    {
+                        if (serieItem is Series)
                         {
-                            if (item is Episode)
+                            Series? serie = serieItem as Series;
+                            if (serie == null)
                             {
-                                Episode? episode = item as Episode;
-                                if (episode == null || episode.IndexNumber == null)
-                                {
-                                    continue;
-                                }
-
-                                bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
-                                if (isPlayed)
-                                {
-                                    await OnMarkedService.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
-                                }
+                                continue;
                             }
-                            else if (item is Season)
+
+                            foreach (var item in serie.Children)
                             {
-                                Season? season = item as Season;
-                                if (season == null)
+                                if (item is Episode)
                                 {
-                                    continue;
-                                }
-
-                                int maxEpisodeNumber = -1;
-                                foreach (var item2 in season.Children)
-                                {
-                                    if (item2 is Episode)
+                                    Episode? episode = item as Episode;
+                                    if (episode == null || episode.IndexNumber == null)
                                     {
-                                        Episode? episode = item2 as Episode;
-                                        if (episode == null)
-                                        {
-                                            continue;
-                                        }
+                                        continue;
+                                    }
 
-                                        bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
-                                        if (isPlayed)
+                                    bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
+                                    if (isPlayed)
+                                    {
+                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
+                                    }
+                                }
+                                else if (item is Season)
+                                {
+                                    Season? season = item as Season;
+                                    if (season == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    int maxEpisodeNumber = -1;
+                                    foreach (var item2 in season.Children)
+                                    {
+                                        if (item2 is Episode)
                                         {
-                                            if (episode.IndexNumber != null && episode.IndexNumber > maxEpisodeNumber)
+                                            Episode? episode = item2 as Episode;
+                                            if (episode == null)
                                             {
-                                                maxEpisodeNumber = episode.IndexNumber.Value;
+                                                continue;
+                                            }
+
+                                            bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
+                                            if (isPlayed)
+                                            {
+                                                if (episode.IndexNumber != null && episode.IndexNumber > maxEpisodeNumber)
+                                                {
+                                                    maxEpisodeNumber = episode.IndexNumber.Value;
+                                                }
                                             }
                                         }
                                     }
-                                }
 
-                                if (maxEpisodeNumber > 0)
-                                {
-                                    await OnMarkedService.UpdateAnimeList(serie.Name, maxEpisodeNumber, season.IndexNumber, uConfig, _logger).ConfigureAwait(false);
+                                    if (maxEpisodeNumber > 0)
+                                    {
+                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, maxEpisodeNumber, season.IndexNumber, uConfig, _logger).ConfigureAwait(false);
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
