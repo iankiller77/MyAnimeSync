@@ -29,24 +29,29 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
         private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
 
-        private static async Task<TokenResponseStruct> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
+        private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
         {
             HttpClient httpClient = new HttpClient();
             var content = new FormUrlEncodedContent(values);
-            var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new AuthenticationException("Could not retrieve provider token");
-            }
 
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
-            if (jsonData == null)
+            try
             {
-                throw new AuthenticationException("Could not retrieve token from request.");
-            }
+                var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Could not retrieve provider token");
+                }
 
-            return jsonData;
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
+                if (jsonData == null)
+                {
+                    throw new AuthenticationException("Could not retrieve token from request.");
+                }
+
+                return jsonData;
+            }
+            catch { return null; }
         }
 
         private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token)
@@ -54,16 +59,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await httpClient.GetAsync(url).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated get request returned an error response.");
+                var response = await httpClient.GetAsync(url).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated get request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
         private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
@@ -72,16 +81,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var uri = new Uri(QueryHelpers.AddQueryString(url, values));
 
-            var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated get request returned an error response.");
+                var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated get request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
         private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token)
@@ -90,16 +103,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var content = new FormUrlEncodedContent(values);
 
-            var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated patch request returned an error response.");
+                var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated patch request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
         private static string GenerateCodeChallenge()
@@ -180,7 +197,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "code_verifier", codeVerifier },
                 { "grant_type", grantType }
             };
-            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            if (jsonData == null) { return; }
+
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
@@ -209,7 +228,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "refresh_token", refreshToken }
             };
 
-            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            if (jsonData == null) { return; }
+
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
