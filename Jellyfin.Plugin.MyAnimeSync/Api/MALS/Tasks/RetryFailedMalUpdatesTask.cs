@@ -58,8 +58,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
                 foreach (UpdateEntry entry in uConfig.FailedUpdates)
                 {
                     taskList.Add(_ = OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger));
-                    await Task.WhenAll(taskList.AsEnumerable()).ConfigureAwait(false);
                 }
+
+                await Task.WhenAll(taskList.AsEnumerable()).ConfigureAwait(false);
             }
         }
 
