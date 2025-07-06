@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -205,7 +206,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 #pragma warning disable CA1849
                 // Retrieve anime status in user library.
                 UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
-#pragma warning restore CA1849
                 if (!entry.SuccessStatus)
                 {
                     logger.LogError(
@@ -231,8 +231,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
 
                 // Update anime status
-                MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).ConfigureAwait(true);
-                return true;
+                return MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).Result;
+#pragma warning restore CA1849
             }
         }
 

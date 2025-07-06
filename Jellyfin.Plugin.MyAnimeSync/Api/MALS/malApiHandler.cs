@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -28,6 +29,23 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string TokenUrl = ApiBaseUrl + "token";
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
         private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
+        private static readonly object _lock = new object();
+        private static List<DateTime> _requestList = new List<DateTime>();
+
+        private static void ThrottleApiRequests()
+        {
+            lock (_lock)
+            {
+                // Limit to 250 requests per 5 minutes.
+                _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
+                _requestList.Add(DateTime.Now);
+                while (_requestList.Count >= 250)
+                {
+                    Thread.Sleep(30000);
+                    _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
+                }
+            }
+        }
 
         private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
         {
@@ -36,6 +54,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
+                ThrottleApiRequests();
                 var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -61,6 +80,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
+                ThrottleApiRequests();
                 var response = await httpClient.GetAsync(url).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -83,6 +103,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
+                ThrottleApiRequests();
                 var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -105,6 +126,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
+                ThrottleApiRequests();
                 var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -401,7 +423,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="status">Watch status of the serie.<see cref="bool"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>A task.</returns>
-        public static async Task UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
+        public static async Task<bool> UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
 
@@ -412,7 +434,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
-            await SendPatchRequest(url, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendPatchRequest(url, values, token).ConfigureAwait(true);
+            return jsonData != null;
         }
 
         internal sealed class TokenResponseStruct
