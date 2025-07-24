@@ -47,14 +47,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             }
         }
 
-        private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
+        private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             var content = new FormUrlEncodedContent(values);
 
             try
             {
-                ThrottleApiRequests();
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
                 var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -73,14 +77,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             try
             {
-                ThrottleApiRequests();
+                if (!throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
                 var response = await httpClient.GetAsync(url).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -95,7 +103,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -103,7 +111,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
-                ThrottleApiRequests();
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
                 var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -118,7 +130,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -126,7 +138,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             try
             {
-                ThrottleApiRequests();
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
                 var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -210,6 +226,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             string clientSecret = uConfig.ClientSecret;
             string codeVerifier = uConfig.CodeChallenge;
             string grantType = "authorization_code";
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string>()
             {
@@ -219,7 +236,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "code_verifier", codeVerifier },
                 { "grant_type", grantType }
             };
-            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
             if (jsonData == null) { return; }
 
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
@@ -241,6 +258,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
             string refreshToken = uConfig.RefreshToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string>()
             {
@@ -250,7 +268,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "refresh_token", refreshToken }
             };
 
-            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
             if (jsonData == null) { return; }
 
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
@@ -276,6 +294,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         {
             string token = uConfig.UserToken;
             bool nsfwCheck = uConfig.AllowNSFW;
+            bool throttling = uConfig.Throttle;
 
             string searchString = animeName;
             if (searchString.Length > 64)
@@ -291,7 +310,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "nsfw", nsfwCheck.ToString() }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
@@ -358,6 +377,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<AnimeData?> GetAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -365,7 +385,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID;
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             AnimeData? animeInfo = jsonData.Deserialize<AnimeData>();
@@ -381,6 +401,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<UserAnimeInfo> GetUserAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -388,7 +409,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "limit", "500" }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return new UserAnimeInfo(null, false); }
             AnimeListEntry[]? animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
             if (animeList == null) { return new UserAnimeInfo(null, false); }
@@ -403,7 +424,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 string? nextUrl = pagingData["next"].Deserialize<string>();
                 if (nextUrl == null) { return new UserAnimeInfo(null, true); }
 
-                jsonData = await SendAuthenticatedGetRequest(nextUrl, token).ConfigureAwait(true);
+                jsonData = await SendAuthenticatedGetRequest(nextUrl, token, throttling).ConfigureAwait(true);
                 if (jsonData == null) { return new UserAnimeInfo(null, false); }
 
                 animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
@@ -426,6 +447,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<bool> UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -434,7 +456,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
-            JsonNode? jsonData = await SendPatchRequest(url, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendPatchRequest(url, values, token, throttling).ConfigureAwait(true);
             return jsonData != null;
         }
 

@@ -25,6 +25,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             ClientSecret = string.Empty;
             CodeChallenge = string.Empty;
             AllowNSFW = false;
+            Throttle = true;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
             FailedUpdates = Array.Empty<UpdateEntry>();
         }
@@ -68,6 +69,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets a value indicating whether we should allow nsfw entry in anime search.
         /// </summary>
         public bool AllowNSFW { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we want to throttle myanimelist.net api requests.
+        /// </summary>
+        public bool Throttle { get; set; }
 
         /// <summary>
         /// Gets or sets the list of libraries monitored for the user.

@@ -56,9 +56,32 @@
                                 If you are having issues finding an anime, this option can help. Some false positive may prevent showing non nsfw anime in the normal search.
                             </div>
                         </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="Throttle" type="checkbox" is="emby-checkbox" />
+                                <span>Throttle Api Requests</span>
+                            </label>
+                            <div class="fieldDescription">
+                                This option will determine if api requests are throttled for MyAnimeList.net<br>
+                                By disabling this, all requests will be sent to the api simultaneously, if myanimelist block an api request, the entry will be added as a failed update.<br>
+                                Your error logs may be flooded with failed updates.<br>
+                                If you are opting to disable this and use the "Sync Libraries" button, I highly reccomend you to manually force update every ~5 min to retry the failed entries.<br>
+                                This can be done by going in the dashboard -> Scheduled Tasks and executing the "MyAnimeSync retry to update failed entries" task.
+                            </div>
+                        </div>
                         <div id="libraryContainer">
                             <h3 class="checkboxListLabel">Checked Libraries:</h3>
                             <div id="CheckedLibraries" class="paperList checkboxList checkboxList-paperList"></div>
+                        </div>
+                        <div>
+                            <button is="emby-button" style="color:yellow" type="button" onclick="MyAnimeSyncConfig.syncLibraries();" class="raised block">
+                                Sync Libraries
+                            </button>
+                            <div class="fieldDescription">
+                                This will synchronize MyAnimeList.net with your jellyfin watch status for all checked libraries.<br>
+                                Use this with caution, make sure to backup your anime list on MyAnimeList.net before using this button. <br>
+                                Depending on the size of your libraries this can take while!
+                            </div>
                         </div>
                         <div>
                             <h3 class="checkboxListLabel">Failed Anime Updates:</h3>
@@ -302,6 +325,18 @@
                     this.configCache.UserConfigs = this.configCache.UserConfigs.filter(item => !(item.Id === guid));
                     await MyAnimeSyncConfig.saveConfig(guid, false);
                     location.reload()
+                }
+            },
+
+            syncLibraries: async function ()
+            {
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                await MyAnimeSyncConfig.saveConfig(guid);
+
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                if (confirm("Make sure your read the information under this button before proceding!\nDo you want to continue?"))
+                {
+                    await fetch(baseUrl + "/MyAnimeSync/fullUpdate?guid=" + guid);
                 }
             },
 
