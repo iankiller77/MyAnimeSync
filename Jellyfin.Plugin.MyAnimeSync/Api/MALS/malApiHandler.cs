@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -28,78 +29,132 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string TokenUrl = ApiBaseUrl + "token";
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
         private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
+        private static readonly object _lock = new object();
+        private static List<DateTime> _requestList = new List<DateTime>();
 
-        private static async Task<TokenResponseStruct> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values)
+        private static void ThrottleApiRequests()
+        {
+            lock (_lock)
+            {
+                // Limit to 250 requests per 5 minutes.
+                _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
+                _requestList.Add(DateTime.Now);
+                while (_requestList.Count >= 250)
+                {
+                    Thread.Sleep(30000);
+                    _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
+                }
+            }
+        }
+
+        private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             var content = new FormUrlEncodedContent(values);
-            var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new AuthenticationException("Could not retrieve provider token");
-            }
 
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
-            if (jsonData == null)
+            try
             {
-                throw new AuthenticationException("Could not retrieve token from request.");
-            }
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
 
-            return jsonData;
+                var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Could not retrieve provider token");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
+                if (jsonData == null)
+                {
+                    throw new AuthenticationException("Could not retrieve token from request.");
+                }
+
+                return jsonData;
+            }
+            catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await httpClient.GetAsync(url).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated get request returned an error response.");
+                if (!throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.GetAsync(url).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated get request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var uri = new Uri(QueryHelpers.AddQueryString(url, values));
 
-            var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated get request returned an error response.");
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated get request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
-        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token)
+        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var content = new FormUrlEncodedContent(values);
 
-            var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                throw new AuthenticationException("Authenticated patch request returned an error response.");
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated patch request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
             }
-
-            StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-            JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-            return jsonData;
+            catch { return null; }
         }
 
         private static string GenerateCodeChallenge()
@@ -171,6 +226,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             string clientSecret = uConfig.ClientSecret;
             string codeVerifier = uConfig.CodeChallenge;
             string grantType = "authorization_code";
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string>()
             {
@@ -180,7 +236,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "code_verifier", codeVerifier },
                 { "grant_type", grantType }
             };
-            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
+            if (jsonData == null) { return; }
+
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
@@ -200,6 +258,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
             string refreshToken = uConfig.RefreshToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string>()
             {
@@ -209,7 +268,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "refresh_token", refreshToken }
             };
 
-            TokenResponseStruct jsonData = await SendUrlEncodedPostRequest(TokenUrl, values).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
+            if (jsonData == null) { return; }
+
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
@@ -233,6 +294,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         {
             string token = uConfig.UserToken;
             bool nsfwCheck = uConfig.AllowNSFW;
+            bool throttling = uConfig.Throttle;
 
             string searchString = animeName;
             if (searchString.Length > 64)
@@ -248,7 +310,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "nsfw", nsfwCheck.ToString() }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
@@ -315,6 +377,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<AnimeData?> GetAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -322,7 +385,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID;
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             AnimeData? animeInfo = jsonData.Deserialize<AnimeData>();
@@ -338,6 +401,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public static async Task<UserAnimeInfo> GetUserAnimeInfo(int animeID, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -345,7 +409,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "limit", "500" }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return new UserAnimeInfo(null, false); }
             AnimeListEntry[]? animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
             if (animeList == null) { return new UserAnimeInfo(null, false); }
@@ -360,7 +424,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 string? nextUrl = pagingData["next"].Deserialize<string>();
                 if (nextUrl == null) { return new UserAnimeInfo(null, true); }
 
-                jsonData = await SendAuthenticatedGetRequest(nextUrl, token).ConfigureAwait(true);
+                jsonData = await SendAuthenticatedGetRequest(nextUrl, token, throttling).ConfigureAwait(true);
                 if (jsonData == null) { return new UserAnimeInfo(null, false); }
 
                 animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
@@ -380,9 +444,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="status">Watch status of the serie.<see cref="bool"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>A task.</returns>
-        public static async Task UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
+        public static async Task<bool> UpdateUserInfo(int animeID, int episodeNumber, string status, UserConfig uConfig)
         {
             string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
 
             var values = new Dictionary<string, string?>()
             {
@@ -391,7 +456,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
-            await SendPatchRequest(url, values, token).ConfigureAwait(true);
+            JsonNode? jsonData = await SendPatchRequest(url, values, token, throttling).ConfigureAwait(true);
+            return jsonData != null;
         }
 
         internal sealed class TokenResponseStruct

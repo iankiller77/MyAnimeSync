@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +10,6 @@ using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,10 +19,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
     /// <inheritdoc/>
     public class OnMarkedService : IHostedService
     {
+        private static readonly object _dictLock = new object();
+        private static Dictionary<string, object> _updateLocks = new Dictionary<string, object>();
         private readonly ILogger<OnMarkedService> _logger;
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
-        private static readonly object CheckAndUpdateLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OnMarkedService"/> class.
@@ -94,16 +94,21 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return await MalApiHandler.GetAnimeInfo(relatedAnime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
         }
 
-        /// <summary>
-        /// Update anime watch list on MyAnimeList when an episode is marked as watched.
-        /// </summary>
-        /// <param name="serie">The serie's name.<see cref="string"/>.</param>
-        /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
-        /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
-        /// <param name="userConfig">The user config. <see cref="UserConfig"/>.</param>
-        /// <param name="logger">The logger. <see cref="ILogger"/>.</param>
-        /// <returns> The task. </returns>
-        public static async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        private static object GetLock(string anime)
+        {
+            lock (_dictLock)
+            {
+                if (_updateLocks.TryGetValue(anime, out object? uLock))
+                {
+                    return uLock;
+                }
+
+                _updateLocks.Add(anime, new object());
+                return _updateLocks[anime];
+            }
+        }
+
+        private static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
             // Update tokens if needed before using the api.
             await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
@@ -196,12 +201,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
 
             // Only check and update user library while nothing is currently being updated.
-            lock (CheckAndUpdateLock)
+            lock (GetLock(serie))
             {
 #pragma warning disable CA1849
                 // Retrieve anime status in user library.
                 UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
-#pragma warning restore CA1849
                 if (!entry.SuccessStatus)
                 {
                     logger.LogError(
@@ -227,9 +231,26 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
 
                 // Update anime status
-                MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).ConfigureAwait(true);
-                return true;
+                return MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).Result;
+#pragma warning restore CA1849
             }
+        }
+
+        /// <summary>
+        /// Update anime watch list on MyAnimeList when an episode is marked as watched.
+        /// </summary>
+        /// <param name="serie">The serie's name.<see cref="string"/>.</param>
+        /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
+        /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
+        /// <param name="userConfig">The user config. <see cref="UserConfig"/>.</param>
+        /// <param name="logger">The logger. <see cref="ILogger"/>.</param>
+        /// <returns> The task. </returns>
+        public static async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        {
+            bool success = await InternalUpdateAnimeList(serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+            userConfig.UpdateFailEntries(serie, episodeNumber, seasonNumber ?? 1, success: success);
+
+            return success;
         }
 
         /// <summary>
@@ -280,11 +301,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    bool success = await UpdateAnimeList(serie, episodeNumber.Value, episode.AiredSeasonNumber, userConfig, _logger).ConfigureAwait(true);
-                    if (!success)
-                    {
-                        userConfig.UpdateFailEntries(serie, episodeNumber.Value, episode.AiredSeasonNumber ?? 1);
-                    }
+                    await UpdateAnimeList(serie, episodeNumber.Value, episode.AiredSeasonNumber, userConfig, _logger).ConfigureAwait(false);
                 }
             }
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -53,21 +54,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
 
             foreach (UserConfig uConfig in configs)
             {
+                List<Task<bool>> taskList = new List<Task<bool>>();
                 foreach (UpdateEntry entry in uConfig.FailedUpdates)
                 {
-                    if (entry.RetryCount < 5)
-                    {
-                        bool success = await OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger).ConfigureAwait(true);
-                        if (!success)
-                        {
-                            uConfig.UpdateRetryFailed(entry);
-                        }
-                        else
-                        {
-                            uConfig.UpdateRetrySuccess(entry);
-                        }
-                    }
+                    taskList.Add(_ = OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger));
                 }
+
+                await Task.WhenAll(taskList.AsEnumerable()).ConfigureAwait(false);
             }
         }
 
