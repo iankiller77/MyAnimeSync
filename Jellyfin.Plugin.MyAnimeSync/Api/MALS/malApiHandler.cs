@@ -1,21 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
-using Microsoft.AspNetCore.WebUtilities;
+using Jellyfin.Plugin.MyAnimeSync.HttpHelper;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 {
@@ -29,133 +21,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         private const string TokenUrl = ApiBaseUrl + "token";
         private const string AnimeUrl = "https://api.myanimelist.net/v2/anime";
         private const string UserAnimeListUrl = "https://api.myanimelist.net/v2/users/@me/animelist";
-        private static readonly object _lock = new object();
-        private static List<DateTime> _requestList = new List<DateTime>();
-
-        private static void ThrottleApiRequests()
-        {
-            lock (_lock)
-            {
-                // Limit to 250 requests per 5 minutes.
-                _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
-                _requestList.Add(DateTime.Now);
-                while (_requestList.Count >= 250)
-                {
-                    Thread.Sleep(30000);
-                    _requestList.RemoveAll(element => DateTime.Now.Subtract(element).TotalMinutes > 5);
-                }
-            }
-        }
-
-        private static async Task<TokenResponseStruct?> SendUrlEncodedPostRequest(string url, Dictionary<string, string> values, bool throttling)
-        {
-            HttpClient httpClient = new HttpClient();
-            var content = new FormUrlEncodedContent(values);
-
-            try
-            {
-                if (throttling)
-                {
-                    ThrottleApiRequests();
-                }
-
-                var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new AuthenticationException("Could not retrieve provider token");
-                }
-
-                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-                TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await reader.ReadToEndAsync().ConfigureAwait(true));
-                if (jsonData == null)
-                {
-                    throw new AuthenticationException("Could not retrieve token from request.");
-                }
-
-                return jsonData;
-            }
-            catch { return null; }
-        }
-
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, string token, bool throttling)
-        {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            try
-            {
-                if (!throttling)
-                {
-                    ThrottleApiRequests();
-                }
-
-                var response = await httpClient.GetAsync(url).ConfigureAwait(true);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new AuthenticationException("Authenticated get request returned an error response.");
-                }
-
-                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-                return jsonData;
-            }
-            catch { return null; }
-        }
-
-        private static async Task<JsonNode?> SendAuthenticatedGetRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
-        {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var uri = new Uri(QueryHelpers.AddQueryString(url, values));
-
-            try
-            {
-                if (throttling)
-                {
-                    ThrottleApiRequests();
-                }
-
-                var response = await httpClient.GetAsync(uri).ConfigureAwait(true);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new AuthenticationException("Authenticated get request returned an error response.");
-                }
-
-                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-                return jsonData;
-            }
-            catch { return null; }
-        }
-
-        private static async Task<JsonNode?> SendPatchRequest(string url, Dictionary<string, string?> values, string token, bool throttling)
-        {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var content = new FormUrlEncodedContent(values);
-
-            try
-            {
-                if (throttling)
-                {
-                    ThrottleApiRequests();
-                }
-
-                var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new AuthenticationException("Authenticated patch request returned an error response.");
-                }
-
-                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
-                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
-
-                return jsonData;
-            }
-            catch { return null; }
-        }
 
         private static string GenerateCodeChallenge()
         {
@@ -236,7 +101,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "code_verifier", codeVerifier },
                 { "grant_type", grantType }
             };
-            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await HttpRequestHelper.SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true));
             if (jsonData == null) { return; }
 
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
@@ -268,7 +133,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "refresh_token", refreshToken }
             };
 
-            TokenResponseStruct? jsonData = await SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true);
+            TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await HttpRequestHelper.SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true));
             if (jsonData == null) { return; }
 
             await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
@@ -281,7 +146,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <returns>The string with no special characters.</returns>
         public static string RemoveSpecialCharacters(string str)
         {
-            return Regex.Replace(str, "[^a-zA-Z0-9\\ _.]+", string.Empty, RegexOptions.Compiled);
+            return new string(str.Select(c => !(char.IsLetterOrDigit(c) || char.IsWhiteSpace(c)) ? ' ' : c).ToArray());
         }
 
         /// <summary>
@@ -310,7 +175,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "nsfw", nsfwCheck.ToString() }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(AnimeUrl, values, token, throttling).ConfigureAwait(true);
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(AnimeUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             Node[]? entry = jsonData["data"]?.Deserialize<Node[]>();
@@ -318,7 +183,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
             List<Node> matchingEntries = Array.FindAll(entry, element =>
                                                             (element.SearchEntry?.Title?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
-                                                            (element.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false)).ToList();
+                                                            (element.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                                                            (element.SearchEntry?.AlternativeTitles?.JapaneseTitle?.Contains(animeName, StringComparison.CurrentCultureIgnoreCase) ?? false)).ToList();
 
             // If we could not retrieve with complete string, try matching individual words instead.
             if (matchingEntries.Count < 1)
@@ -341,11 +207,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                         {
                             node.SearchEntry.AlternativeTitles.EnglishTitle = RemoveSpecialCharacters(node.SearchEntry.AlternativeTitles.EnglishTitle);
                         }
+
+                        if (node.SearchEntry.AlternativeTitles != null && node.SearchEntry.AlternativeTitles.JapaneseTitle != null)
+                        {
+                            node.SearchEntry.AlternativeTitles.JapaneseTitle = RemoveSpecialCharacters(node.SearchEntry.AlternativeTitles.JapaneseTitle);
+                        }
                     }
 
                     int matchedWordCount = words.Count(element =>
                                                     (node.SearchEntry?.Title?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
-                                                    (node.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false));
+                                                    (node.SearchEntry?.AlternativeTitles?.EnglishTitle?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                                                    (node.SearchEntry?.AlternativeTitles?.JapaneseTitle?.Contains(element, StringComparison.CurrentCultureIgnoreCase) ?? false));
                     if (matchedWordCount == mostWordMatched)
                     {
                         matchingEntries.Add(node);
@@ -385,7 +257,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID;
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(url, values, token, throttling).ConfigureAwait(true);
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(url, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return null; }
 
             AnimeData? animeInfo = jsonData.Deserialize<AnimeData>();
@@ -409,7 +281,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "limit", "500" }
             };
 
-            JsonNode? jsonData = await SendAuthenticatedGetRequest(UserAnimeListUrl, values, token, throttling).ConfigureAwait(true);
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(UserAnimeListUrl, values, token, throttling).ConfigureAwait(true);
             if (jsonData == null) { return new UserAnimeInfo(null, false); }
             AnimeListEntry[]? animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
             if (animeList == null) { return new UserAnimeInfo(null, false); }
@@ -424,7 +296,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 string? nextUrl = pagingData["next"].Deserialize<string>();
                 if (nextUrl == null) { return new UserAnimeInfo(null, true); }
 
-                jsonData = await SendAuthenticatedGetRequest(nextUrl, token, throttling).ConfigureAwait(true);
+                jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(nextUrl, token, throttling).ConfigureAwait(true);
                 if (jsonData == null) { return new UserAnimeInfo(null, false); }
 
                 animeList = jsonData["data"].Deserialize<AnimeListEntry[]>();
@@ -456,7 +328,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             string url = AnimeUrl + "/" + animeID + "/my_list_status";
-            JsonNode? jsonData = await SendPatchRequest(url, values, token, throttling).ConfigureAwait(true);
+            JsonNode? jsonData = await HttpRequestHelper.SendPatchRequest(url, values, token, throttling).ConfigureAwait(true);
             return jsonData != null;
         }
 

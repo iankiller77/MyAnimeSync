@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
+using Jellyfin.Plugin.MyAnimeSync.Api.TVDB;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
@@ -108,6 +109,52 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
+        private static bool UpdateUserList(string serie, int episodeNumber, int? seasonNumber, AnimeData info, UserConfig userConfig, ILogger logger)
+        {
+            if (info.ID == null) { return false; }
+
+            // Only check and update user library while nothing is currently being updated.
+            lock (GetLock(serie))
+            {
+#pragma warning disable CA1849
+                // Retrieve anime status in user library.
+                UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
+                if (!entry.SuccessStatus)
+                {
+                    logger.LogError(
+                            "Could not parse anime list for user : {User}",
+                            userConfig.Id);
+                    return false;
+                }
+
+                if (entry.Info != null && entry.Info.StatusInfo != null)
+                {
+                    // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
+                    if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber)
+                    {
+                        logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}, watch status {LastWatched}", serie, seasonNumber, episodeNumber, entry.Info.StatusInfo.EpisodeWatched);
+                        return true;
+                    }
+                }
+
+                if (info.EpisodeCount > 0 && episodeNumber > info.EpisodeCount)
+                {
+                    logger.LogError("Unexpected episode number : {Episode} for {Anime} season {Season}", episodeNumber, serie, seasonNumber);
+                    return false;
+                }
+
+                string status = WatchStatus.Watching;
+                if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
+                {
+                    status = WatchStatus.Completed;
+                }
+
+                // Update anime status
+                return MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).Result;
+#pragma warning restore CA1849
+            }
+        }
+
         private static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
             // Update tokens if needed before using the api.
@@ -129,12 +176,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     "Could not retrieve anime info for id : {ID}",
                     id);
                 return false;
-            }
-
-            if (seasonNumber < 1)
-            {
-                logger.LogInformation("Ignoring season 0 for anime : {Serie}", serie);
-                return true;
             }
 
             int seasonOffset = seasonNumber - 1 ?? 0;
@@ -200,40 +241,75 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
             }
 
-            // Only check and update user library while nothing is currently being updated.
-            lock (GetLock(serie))
+            return UpdateUserList(serie, episodeNumber, seasonNumber, info, userConfig, logger);
+        }
+
+        private static async Task<bool> InternalUpdateAnimeListSpecial(string serie, int episodeNumber, UserConfig userConfig, ILogger logger)
+        {
+            if (!userConfig.AllowSpecials)
             {
-#pragma warning disable CA1849
-                // Retrieve anime status in user library.
-                UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
-                if (!entry.SuccessStatus)
+                logger.LogWarning("Updating special episodes is disabled, skipping the update for {Serie} special #{EpisodeNumber}!", serie, episodeNumber);
+                return true;
+            }
+
+            await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
+
+            int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
+            if (tvdbID == null)
+            {
+                logger.LogError("Could not retrieve ID from tvdb for : {SerieName}", serie);
+                return false;
+            }
+
+            EpisodeData[]? episodes = await TVDBApiHandler.GetEpisodesData(tvdbID.Value, 0).ConfigureAwait(true);
+            if (episodes == null || episodes.Length < 1)
+            {
+                logger.LogError("Could not retrieve episodes data for {Serie} season {Season}", serie, 0);
+                return false;
+            }
+
+            EpisodeData? episodeData = Array.Find(episodes, episode => episode.EpisodeNumber == episodeNumber);
+            if (episodeData == null || episodeData.Name == null)
+            {
+                logger.LogError("Could not retrieve name from tvdb for episode : {Serie} season {Season} episode {Episode}", serie, 0, episodeNumber);
+                return false;
+            }
+
+            // Update to use episode name.
+            string episodeName = episodeData.Name;
+
+            AnimeData? info = null;
+
+            int? id = await MalApiHandler.GetAnimeID(episodeName, userConfig).ConfigureAwait(true);
+            if (id != null)
+            {
+                info = await MalApiHandler.GetAnimeInfo(id.Value, userConfig).ConfigureAwait(true);
+            }
+
+            if (info == null || info.ID == null || info.EpisodeCount == null || info.MediaType == null || info.MediaType == MediaType.SeasonalAnime)
+            {
+                episodeName = episodeName.Split('-')[0].Trim();
+                int? newID = await MalApiHandler.GetAnimeID(episodeName, userConfig).ConfigureAwait(true);
+                if (newID == null)
                 {
                     logger.LogError(
-                            "Could not parse anime list for user : {User}",
-                            userConfig.Id);
+                    "Could not retrieve id for anime : {AnimeName} - {EpisodeName}", serie, episodeName);
                     return false;
                 }
 
-                if (entry.Info != null && entry.Info.StatusInfo != null)
+                info = await MalApiHandler.GetAnimeInfo(newID.Value, userConfig).ConfigureAwait(true);
+                if (info == null || info.ID == null || info.EpisodeCount == null || info.MediaType == null || info.MediaType == MediaType.SeasonalAnime)
                 {
-                    // Do nothing if anime is already marked as completed or if the episode number is not higher then the user watched episode.
-                    if (entry.Info.StatusInfo.Status == WatchStatus.Completed || entry.Info.StatusInfo.EpisodeWatched >= episodeNumber)
-                    {
-                        logger.LogInformation("No need to update user entry for anime : {Anime} season {Season} ep {Ep}, watch status {LastWatched}", serie, seasonNumber, episodeNumber, entry.Info.StatusInfo.EpisodeWatched);
-                        return true;
-                    }
+                    logger.LogError(
+                        "Could not retrieve expected sequel using episode offset for anime : {ID}", id);
+                    return false;
                 }
-
-                string status = WatchStatus.Watching;
-                if (info.EpisodeCount > 0 && episodeNumber >= info.EpisodeCount)
-                {
-                    status = WatchStatus.Completed;
-                }
-
-                // Update anime status
-                return MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).Result;
-#pragma warning restore CA1849
             }
+
+            // TODO: Try to match with proper episode number for the special!
+            episodeNumber = info.EpisodeCount.Value;
+
+            return UpdateUserList(episodeName, episodeNumber, 0, info, userConfig, logger);
         }
 
         /// <summary>
@@ -247,7 +323,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         /// <returns> The task. </returns>
         public static async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
-            bool success = await InternalUpdateAnimeList(serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+            bool success;
+
+            if (seasonNumber == null || seasonNumber > 0)
+            {
+                success = await InternalUpdateAnimeList(serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+            }
+            else
+            {
+                success = await InternalUpdateAnimeListSpecial(serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
+            }
+
             userConfig.UpdateFailEntries(serie, episodeNumber, seasonNumber ?? 1, success: success);
 
             return success;
@@ -293,7 +379,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     }
 
                     int? episodeNumber = episode.IndexNumber;
-                    if (episodeNumber == null)
+                    if (episodeNumber == null || episode.AiredSeasonNumber == null)
                     {
                         _logger.LogError(
                             "Could not retrieve episode number for : {AnimeName}",

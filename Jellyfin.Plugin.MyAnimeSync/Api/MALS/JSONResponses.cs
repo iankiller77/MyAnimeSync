@@ -126,6 +126,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public string? EnglishTitle { get; set; }
 
         /// <summary>
+        /// Gets or sets the japanese title.
+        /// </summary>
+        [JsonPropertyName("ja")]
+        public string? JapaneseTitle { get; set; }
+
+        /// <summary>
         /// Gets or sets the synonym title.
         /// </summary>
         [JsonPropertyName("synonyms")]
