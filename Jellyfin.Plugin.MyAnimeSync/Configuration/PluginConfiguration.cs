@@ -24,6 +24,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public Guid AuthenticatingUser { get; set; }
 
         /// <summary>
+        /// Gets or sets the TVDB global token.
+        /// </summary>
+        public string? TVDBToken { get; set; }
+
+        /// <summary>
         /// Gets or sets the list of user configs.
         /// </summary>
         public UserConfig[] UserConfigs { get; set; }

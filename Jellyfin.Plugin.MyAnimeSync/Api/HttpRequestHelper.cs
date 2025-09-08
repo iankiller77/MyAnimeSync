@@ -35,6 +35,41 @@ namespace Jellyfin.Plugin.MyAnimeSync.HttpHelper
         }
 
         /// <summary>
+        /// Send an Http Get Request.
+        /// </summary>
+        /// <param name="url">The url for the http request.<see cref="string"/>.</param>
+        /// <param name="throttling">A flag to determine if we should throttle requests.<see cref="bool"/>.</param>
+        /// <returns>The json returned by the http request.</returns>
+        public static async Task<string?> SendGetRequest(string url, bool throttling)
+        {
+            HttpClient httpClient = new HttpClient();
+
+            try
+            {
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.GetAsync(url).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Could retrieve TVDB token from github");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                string? data = await reader.ReadToEndAsync().ConfigureAwait(true);
+                if (data == null)
+                {
+                    throw new AuthenticationException("Could not retrieve token from request.");
+                }
+
+                return data;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
         /// Send an Encoded Http Post Request.
         /// </summary>
         /// <param name="url">The url for the http request.<see cref="string"/>.</param>

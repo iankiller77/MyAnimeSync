@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using System.Windows.Markup;
 using Jellyfin.Plugin.MyAnimeSync.HttpHelper;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
@@ -14,14 +13,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
     public static class TVDBApiHandler
     {
         private const string ApiBaseUrl = "https://api4.thetvdb.com/v4/";
-        // private const string LoginUrl = ApiBaseUrl + "login";
-        private const string Token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2UiOiIiLCJhcGlrZXkiOiI0ZWZhZjk0OS1mMTgyLTQ1M2EtYWUwMi1jYmIyMjVmNjVhYjYiLCJjb21tdW5pdHlfc3VwcG9ydGVkIjpmYWxzZSwiZXhwIjoxNzU5OTIxODM0LCJnZW5kZXIiOiIiLCJoaXRzX3Blcl9kYXkiOjEwMDAwMDAwMCwiaGl0c19wZXJfbW9udGgiOjEwMDAwMDAwMCwiaWQiOiIyODE0MDc1IiwiaXNfbW9kIjpmYWxzZSwiaXNfc3lzdGVtX2tleSI6ZmFsc2UsImlzX3RydXN0ZWQiOmZhbHNlLCJwaW4iOiJJUFFaT0NNTiIsInJvbGVzIjpbXSwidGVuYW50IjoidHZkYiIsInV1aWQiOiIifQ.Lb_cPyFNsHnq91q12X3-ZHDaV9WNoEyR_YyTV65v3pmWmyeinS5fHsWlnAwKjX0kAB85pbVDu5dQwFuWRACGrkXUXA4hD52fh_azRluI0IxoL_7mv1z-8HoJWgV8DgJnoX6I1AvMDH40L8Ck_DBD7nar0gJNCUYLh4qRoknmNFLOgUCzsL9KNmj4a2LFkLed5fKMCD4IWVNEFvTGFYbaSOqUwBRTP_nBWbr-lPdqw5QsC7Kqq9hlDS2uWNsrptHIxta8jviY6nu77g_uQHAY5X8U_MUx0BloV_bxY37JocP7asSGGkcLdYjcP3IcGYfYBX_KmnwQ-97Z12j2yBmVlhdsDJtfSQe-UywFSlwSMXE7GcqM0qZ7lRtglWCCEVBAzsvYR34d9lQ0aE0IbTVljFRT5P0znIrmT3l8RPK26H2PR-7P028K-6RsPKeWZNUuykUsIkoIT3q7lYORz0EtCj5kaeJJzdqfRY9mn2Dca-0dJN1_qin_mSgdCUjPjUIwbbvpylVu0xZKW7YoBwZZ3-oQhYPty5glFA2f1t5d9-sgZN7D5qguLvUu0gJ5mzkkaFS59f572LGCEeqqK1TrOMnCSN3TInVUlE1aijKwIs7LqcgJ0GFT8XYmfXrKSxhJjlTOsDViVG4ZasOnFAMux0_bIbjuU0qm8BI-w4BAWPs";
+        private const string TokenURL = "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/token.txt";
         private const string SearchUrl = ApiBaseUrl + "search";
-
-        /*private static readonly object _lock = new object();
+        private static readonly object _lock = new object();
 
         private static string? Token
         {
+            // TODO: Create a task to sync token with github. (2x a month)
             get
             {
                 lock (_lock)
@@ -29,26 +27,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                     string? token = Plugin.Instance?.Configuration.TVDBToken;
                     if (token == null)
                     {
-                        var values = new Dictionary<string, string>()
-                    {
-                        { "apikey", ApiKey },
-                        { "pin", "IPQZOCMN" }
-                    };
-
-                        LoginNode? jsonData = JsonSerializer.Deserialize<LoginNode>(HttpRequestHelper.SendUrlEncodedPostRequest(LoginUrl, values, false).Result);
-                        if (Plugin.Instance == null || jsonData == null || jsonData.Data == null || jsonData.Data.Token == null)
+                        string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
+                        if (Plugin.Instance == null || newToken == null)
                         {
                             return null;
                         }
 
-                        Plugin.Instance.Configuration.TVDBToken = jsonData.Data.Token;
+                        newToken = newToken.Replace("\n", string.Empty, StringComparison.CurrentCultureIgnoreCase);
+
+                        Plugin.Instance.Configuration.TVDBToken = newToken;
                         Plugin.Instance.SaveConfiguration();
+
+                        return newToken;
                     }
 
                     return token;
                 }
             }
-        }*/
+        }
 
         /// <summary>
         /// Gets the id of the best matching serie.
@@ -63,7 +59,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                 { "type", "series" }
             };
 
-            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(SearchUrl, values, Token, false).ConfigureAwait(true);
+            string? token = Token;
+            if (token == null)
+            {
+                return null;
+            }
+
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(SearchUrl, values, token, false).ConfigureAwait(true);
             SeriesSearchNode? node = jsonData.Deserialize<SeriesSearchNode>();
             if (node == null || node.Data == null || node.Data.Length < 1)
             {
@@ -91,8 +93,14 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                 { "season", string.Empty + season }
             };
 
+            string? token = Token;
+            if (token == null)
+            {
+                return null;
+            }
+
             string requestUrl = ApiBaseUrl + "series/" + serieID + "/episodes/default";
-            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(requestUrl, values, Token, false).ConfigureAwait(true);
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(requestUrl, values, token, false).ConfigureAwait(true);
             EpisodesSearchNode? node = jsonData.Deserialize<EpisodesSearchNode>();
             if (node == null || node.Data == null || node.Data.Episodes == null || node.Data.Episodes.Length < 1)
             {
