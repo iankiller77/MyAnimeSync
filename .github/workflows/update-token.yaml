@@ -1,0 +1,28 @@
+name : Update Token
+
+on:
+    schedule:
+        - cron: '0 0 1,15 * *'
+    workflow_dispatch:
+
+jobs:
+    update_token:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                token: ${{secrets.MY_GITHUB_TOKEN}}
+                ref: main
+            #- run: sudo apt update
+            #- run: sudo apt install jq
+            - name: Update token
+              run: |
+                token_respone=$(curl https://api4.thetvdb.com/v4/login --request POST --data '{"apikey":"${{secrets.apikey}}","pin":"IPQZOCMN"}' --header "Content-Type: application/json") &&
+                token=$(echo $token_respone | jq -r '.data.token') && echo $token > token.txt
+                git config user.name "github-actions[bot]"
+                git config user.email "github-actions[bot]@users.noreply.github.com"
+                git add token.txt
+                git commit -m "Auto update token"
+                git push
