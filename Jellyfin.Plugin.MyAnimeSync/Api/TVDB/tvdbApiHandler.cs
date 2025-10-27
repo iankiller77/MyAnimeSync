@@ -47,6 +47,30 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         }
 
         /// <summary>
+        /// Force update the global token used for TVDB.
+        /// </summary>
+        /// <returns>The information for the specified episode.</returns>
+        public static async Task<bool> UpdateTVDBToken()
+        {
+            lock (_lock)
+            {
+#pragma warning disable CA1849
+                string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
+                if (Plugin.Instance == null || newToken == null)
+                {
+                    return false;
+                }
+
+                newToken = newToken.Replace("\n", string.Empty, StringComparison.CurrentCultureIgnoreCase);
+
+                Plugin.Instance.Configuration.TVDBToken = newToken;
+                Plugin.Instance.SaveConfiguration();
+                return true;
+#pragma warning restore CA1849
+            }
+        }
+
+        /// <summary>
         /// Gets the id of the best matching serie.
         /// </summary>
         /// <param name="name">Name of the serie.<see cref="string"/>.</param>
