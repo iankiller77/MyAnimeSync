@@ -6,6 +6,7 @@
             "type": "coreclr",
             "name": "Launch",
             "request": "launch",
+            // "console": "integratedTerminal",
             "requireExactSource": false,
             "justMyCode": false,
             "preLaunchTask": "build-and-copy",

@@ -58,6 +58,18 @@
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label class="emby-checkbox-label">
+                                <input id="AllowSpecials" type="checkbox" is="emby-checkbox" />
+                                <span style="color:yellow">Handle special episodes</span>
+                            </label>
+                            <div class="fieldDescription">
+                                This option will permit updating the user list for special episodes. This currently works only if the specials fit TheTVDB episode structure.<br>
+                                This choice was made to better support Sonarr. Support for other metada providers may be considered in the future.<br>
+                                This is currently a beta feature, this feature has only been tested with a very limited amount of anime.<br>
+                                If someone uses this feature extensively, please feel free to provide feedback by creating an issue on the GitHub page.
+                            </div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
                                 <input id="Throttle" type="checkbox" is="emby-checkbox" />
                                 <span>Throttle Api Requests</span>
                             </label>
