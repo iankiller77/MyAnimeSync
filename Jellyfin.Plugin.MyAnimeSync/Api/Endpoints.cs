@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
@@ -27,6 +28,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         private readonly ILogger<Endpoints> _logger;
         private readonly ILibraryManager _libraryManager;
         private readonly IUserDataManager _userDataManager;
+        private readonly IUserManager _userManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Endpoints"/> class.
@@ -34,11 +36,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         /// <param name="logger">Instance of the <see cref="ILogger{Endpoints}"/> interface.</param>
         /// /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
         /// /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
-        public Endpoints(ILogger<Endpoints> logger, ILibraryManager libraryManager, IUserDataManager userDataManager)
+        /// /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
+        public Endpoints(ILogger<Endpoints> logger, ILibraryManager libraryManager, IUserDataManager userDataManager, IUserManager userManager)
         {
             _logger = logger;
             _libraryManager = libraryManager;
             _userDataManager = userDataManager;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -107,7 +111,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
             await Task.Run(() =>
             {
                 UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(userID);
-                if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
+                User? user = _userManager.GetUserById(userID);
+                if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken) || user == null)
                 {
                     return;
                 }
@@ -157,8 +162,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                                         continue;
                                     }
 
-                                    bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
-                                    if (isPlayed)
+                                    UserItemData? itemData = _userDataManager.GetUserData(user, episode);
+                                    if (itemData == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (itemData.Played)
                                     {
                                         _ = OnMarkedService.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
                                     }
@@ -182,8 +192,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                                                 continue;
                                             }
 
-                                            bool isPlayed = _userDataManager.GetUserData(userID, episode).Played;
-                                            if (isPlayed)
+                                            UserItemData? itemData = _userDataManager.GetUserData(user, episode);
+                                            if (itemData == null)
+                                            {
+                                                continue;
+                                            }
+
+                                            if (itemData.Played)
                                             {
                                                 if (episode.IndexNumber != null && episode.IndexNumber > maxEpisodeNumber)
                                                 {

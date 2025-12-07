@@ -62,7 +62,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
         {
             var trigger = new TaskTriggerInfo
             {
-                Type = TaskTriggerInfo.TriggerInterval,
+                Type = TaskTriggerInfoType.IntervalTrigger,
                 IntervalTicks = TimeSpan.FromDays(1).Ticks
             };
 
