@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
+using Jellyfin.Plugin.ProviderHandler;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,7 +58,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
                 List<Task<bool>> taskList = new List<Task<bool>>();
                 foreach (UpdateEntry entry in uConfig.FailedUpdates)
                 {
-                    taskList.Add(_ = OnMarkedService.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger));
+                    taskList.Add(_ = MALSProvider.UpdateAnimeList(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, uConfig, _logger));
                 }
 
                 await Task.WhenAll(taskList.AsEnumerable()).ConfigureAwait(false);

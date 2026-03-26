@@ -9,6 +9,7 @@ using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
+using Jellyfin.Plugin.ProviderHandler;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
@@ -170,7 +171,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (itemData.Played)
                                     {
-                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
+                                        _ = MALSProvider.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }
                                 else if (item is Season)
@@ -210,7 +211,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (maxEpisodeNumber > 0)
                                     {
-                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, maxEpisodeNumber, season.IndexNumber, uConfig, _logger).ConfigureAwait(false);
+                                        _ = MALSProvider.UpdateAnimeList(serie.Name, maxEpisodeNumber, season.IndexNumber, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -237,7 +238,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            return await OnMarkedService.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
+            return await MALSProvider.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
         }
     }
 }
