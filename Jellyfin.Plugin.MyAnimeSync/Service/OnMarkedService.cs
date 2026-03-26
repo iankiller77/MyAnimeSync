@@ -363,6 +363,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 if (eventArgs.Item is Episode episode)
                 {
                     string serie = episode.SeriesName;
+
+                    // Try to use the original serie name
+                    if (userConfig.OriginalTitleSearch)
+                    {
+                        if (!string.IsNullOrWhiteSpace(episode.Series.OriginalTitle))
+                        {
+                            serie = episode.Series.OriginalTitle;
+                        }
+                    }
+
                     List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders();
                     Folder? folder = episode.Series.GetParent() as Folder;
                     if (folder == null)
