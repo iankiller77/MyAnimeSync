@@ -25,6 +25,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             ClientSecret = string.Empty;
             CodeChallenge = string.Empty;
             AllowNSFW = false;
+            OriginalTitleSearch = false;
             AllowSpecials = false;
             Throttle = true;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
@@ -75,6 +76,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets a value indicating whether we should allow updating special episodes.
         /// </summary>
         public bool AllowSpecials { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we want to force using original titles for serie search.
+        /// </summary>
+        public bool OriginalTitleSearch { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether we want to throttle myanimelist.net api requests.
