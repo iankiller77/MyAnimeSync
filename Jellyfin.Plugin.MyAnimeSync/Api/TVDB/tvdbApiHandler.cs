@@ -50,7 +50,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         /// Force update the global token used for TVDB.
         /// </summary>
         /// <returns>The information for the specified episode.</returns>
-        public static async Task<bool> UpdateTVDBToken()
+        public static bool UpdateTVDBToken()
         {
             lock (_lock)
             {
