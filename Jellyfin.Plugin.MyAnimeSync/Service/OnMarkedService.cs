@@ -158,7 +158,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         private static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
             // Update tokens if needed before using the api.
-            await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
+            if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
+            {
+                logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
+            }
 
             int? id = await MalApiHandler.GetAnimeID(serie, userConfig).ConfigureAwait(true);
             if (id == null)
@@ -255,7 +258,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 return true;
             }
 
-            await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true);
+            if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
+            {
+                logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
+            }
 
             int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
             if (tvdbID == null)

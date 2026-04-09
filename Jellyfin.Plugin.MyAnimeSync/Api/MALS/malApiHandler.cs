@@ -62,21 +62,27 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return $"{AuthorisationUrl}?response_type=code&client_id={uConfig.ClientID}&code_challenge={codeChallenge}";
         }
 
-        private static async Task UpdateTokensInConfig(TokenResponseStruct response, UserConfig uConfig)
+        private static async Task<bool> UpdateTokensInConfig(TokenResponseStruct response, UserConfig uConfig)
         {
-            await Task.Run(() =>
+            try
             {
-                if (response.AccessToken == null || response.RefreshToken == null || response.ExpiresIn == null)
+                await Task.Run(() =>
                 {
-                    throw new AuthenticationException("Could not retrieve data from token response!");
-                }
+                    if (response.AccessToken == null || response.RefreshToken == null || response.ExpiresIn == null)
+                    {
+                        throw new AuthenticationException("Could not retrieve data from token response!");
+                    }
 
-                uConfig.TokenExpirationDateTime = DateTime.Now.AddSeconds(response.ExpiresIn.Value);
-                uConfig.TokenAcquireDateTime = DateTime.Now;
-                uConfig.UserToken = response.AccessToken;
-                uConfig.RefreshToken = response.RefreshToken;
-                Plugin.Instance?.SaveConfiguration();
-            }).ConfigureAwait(true);
+                    uConfig.TokenExpirationDateTime = DateTime.Now.AddSeconds(response.ExpiresIn.Value);
+                    uConfig.TokenAcquireDateTime = DateTime.Now;
+                    uConfig.UserToken = response.AccessToken;
+                    uConfig.RefreshToken = response.RefreshToken;
+                    Plugin.Instance?.SaveConfiguration();
+                }).ConfigureAwait(true);
+            }
+            catch { return false; }
+
+            return true;
         }
 
         /// <summary>
@@ -85,7 +91,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="apiCode">The user code received from authentication url. <see cref="string"/>.</param>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>The task.</returns>
-        public static async Task GetNewTokens(string apiCode, UserConfig uConfig)
+        public static async Task<bool> GetNewTokens(string apiCode, UserConfig uConfig)
         {
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -102,9 +108,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 { "grant_type", grantType }
             };
             TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await HttpRequestHelper.SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true));
-            if (jsonData == null) { return; }
+            if (jsonData == null) { return false; }
 
-            await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
+            return await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -112,13 +118,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <returns>The task.</returns>
-        public static async Task RefreshTokens(UserConfig uConfig)
+        public static async Task<bool> RefreshTokens(UserConfig uConfig)
         {
             DateTime expirationDateTime = uConfig.TokenExpirationDateTime;
             DateTime acquiredTokenDate = uConfig.TokenAcquireDateTime;
 
             // Only refresh if tokens are invalid or if the token is at least 7 days old.
-            if (DateTime.Now.AddMinutes(5) < expirationDateTime || (DateTime.Now - acquiredTokenDate).TotalDays < 7) { return; }
+            if (DateTime.Now.AddMinutes(5) < expirationDateTime || (DateTime.Now - acquiredTokenDate).TotalDays < 7) { return true; }
 
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -134,9 +140,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             };
 
             TokenResponseStruct? jsonData = JsonSerializer.Deserialize<TokenResponseStruct>(await HttpRequestHelper.SendUrlEncodedPostRequest(TokenUrl, values, throttling).ConfigureAwait(true));
-            if (jsonData == null) { return; }
+            if (jsonData == null) { return false; }
 
-            await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
+            return await UpdateTokensInConfig(jsonData, uConfig).ConfigureAwait(true);
         }
 
         /// <summary>

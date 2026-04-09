@@ -52,7 +52,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
             {
                 if (!(string.IsNullOrEmpty(uConfig.ClientID) || string.IsNullOrEmpty(uConfig.ClientSecret) || string.IsNullOrEmpty(uConfig.RefreshToken)))
                 {
-                    await MalApiHandler.RefreshTokens(uConfig).ConfigureAwait(false);
+                    if (!await MalApiHandler.RefreshTokens(uConfig).ConfigureAwait(false))
+                    {
+                        _logger.LogError("Could not update token for user: {UserID}", uConfig.Id);
+                    }
                 }
             }
         }
