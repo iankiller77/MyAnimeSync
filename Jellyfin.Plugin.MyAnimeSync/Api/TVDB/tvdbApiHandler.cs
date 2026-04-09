@@ -50,11 +50,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         /// Force update the global token used for TVDB.
         /// </summary>
         /// <returns>The information for the specified episode.</returns>
-        public static async Task<bool> UpdateTVDBToken()
+        public static bool UpdateTVDBToken()
         {
             lock (_lock)
             {
-#pragma warning disable CA1849
                 string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
                 if (Plugin.Instance == null || newToken == null)
                 {
@@ -66,7 +65,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                 Plugin.Instance.Configuration.TVDBToken = newToken;
                 Plugin.Instance.SaveConfiguration();
                 return true;
-#pragma warning restore CA1849
             }
         }
 

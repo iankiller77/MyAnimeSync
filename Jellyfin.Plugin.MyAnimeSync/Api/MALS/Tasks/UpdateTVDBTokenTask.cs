@@ -46,10 +46,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal.PluginTask
                 throw new DataException("Plugin instance was null!");
             }
 
-            if (!await TVDBApiHandler.UpdateTVDBToken().ConfigureAwait(true))
+            await Task.Run(
+            () =>
             {
-                _logger.LogError("Could not update TVDB Token");
-            }
+                if (!TVDBApiHandler.UpdateTVDBToken())
+                {
+                    _logger.LogError("Could not update TVDB Token");
+                }
+            },
+            cancellationToken).ConfigureAwait(true);
         }
 
         /// <inheritdoc/>

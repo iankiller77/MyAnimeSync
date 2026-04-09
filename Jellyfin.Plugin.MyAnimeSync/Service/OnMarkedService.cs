@@ -189,6 +189,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     logger.LogError(
                         "Could not retrieve expected sequel using season offset for anime : {ID}",
                         id);
+
+                    // TODO: Check if we can try to find the absolute episode number instead of the season number. (For anime like one piece)
+                    // int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
                     return false;
                 }
 
