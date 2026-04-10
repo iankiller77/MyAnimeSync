@@ -8,8 +8,16 @@
         "category": "General",
         "versions": [
 		{
+                "version": "1.5.1.1",
+                "changelog": "Improved logs, UI and better handling of authentication parameters to better support futur issues.\n1. refactor/fixed_warnings_for_TVDB_token_update\n2. refactor/add_more_logs_for_authentication_process\n3. refactor/correct_user_config_client_id_and_secret_before_generating_auth_code_url",
+                "targetAbi": "10.11.0",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.5.1.1/myanimesync_1.5.1.1.zip",
+                "checksum": "d5df25c7c7f5ae87f776d96e6eb1b4e8",
+                "timestamp": "2025-11-27T18:54:00Z"
+            },
+		{
                 "version": "1.5.1.0",
-                "changelog": "Updated code to work with jellyfin 10.11.x",
+                "changelog": "Added option to search for serie using original name",
                 "targetAbi": "10.11.0",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.5.1.0/myanimesync_1.5.1.0.zip",
                 "checksum": "d5df25c7c7f5ae87f776d96e6eb1b4e8",
@@ -33,7 +41,7 @@
             },
 	    {
                 "version": "1.4.2.2",
-                "changelog": "Fixed an issue with bulk update causing wrong episode number to be updated.",
+                "changelog": "Fixed a bug where updating animelist season 0 (specials) was updating anime list as if it was the first season instead.",
                 "targetAbi": "10.9.2",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.4.2.2/myanimesync_1.4.2.2.zip",
                 "checksum": "f2c0384475d673ca6e3711f2466fe55a",
