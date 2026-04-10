@@ -59,6 +59,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                 return null;
             }
 
+            // Remove all non alphanumeric characters from the ClientID.
+            if (!uConfig.ClientID.All(char.IsLetterOrDigit))
+            {
+                uConfig.ClientID = new string(uConfig.ClientID.Where(c => char.IsLetterOrDigit(c)).ToArray());
+                Plugin.Instance?.SaveConfiguration();
+            }
+
+            // Remove all non alphanumeric characters from the ClientSecret.
+            if (!uConfig.ClientSecret.All(char.IsLetterOrDigit))
+            {
+                uConfig.ClientSecret = new string(uConfig.ClientSecret.Where(c => char.IsLetterOrDigit(c)).ToArray());
+                Plugin.Instance?.SaveConfiguration();
+            }
+
             return $"{AuthorisationUrl}?response_type=code&client_id={uConfig.ClientID}&code_challenge={codeChallenge}";
         }
 
