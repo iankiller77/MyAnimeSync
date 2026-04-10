@@ -52,13 +52,21 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         [HttpGet("apicode")]
         public async void RetrieveApiCode([FromQuery(Name = "code")] string code)
         {
+            _logger.LogWarning("Received a user authentication request.");
             UserConfig? uConfig = Plugin.Instance?.Configuration.GetAuthenticatingUserConfig();
             if (uConfig == null)
             {
-                throw new AuthenticationException("No valid user is currently being authenticated.");
+                _logger.LogError("No valid user is currently being authenticated.");
+                return;
             }
 
-            await MalApiHandler.GetNewTokens(code, uConfig).ConfigureAwait(false);
+            if (!await MalApiHandler.GetNewTokens(code, uConfig).ConfigureAwait(false))
+            {
+                _logger.LogError("Tokens update failed for user: {UserID}", uConfig.Id);
+                return;
+            }
+
+            _logger.LogWarning("Completed authentication process for user: {UserID}", uConfig.Id);
         }
 
         /// <summary>
@@ -71,7 +79,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
             UserConfig? uConfig = Plugin.Instance?.Configuration.GetAuthenticatingUserConfig();
             if (uConfig == null)
             {
-                throw new AuthenticationException("No valid user is currently being authenticated.");
+                _logger.LogError("No valid user is currently being authenticated.");
+                return null;
             }
 
             return MalApiHandler.GenerateAuthCodeUrl(uConfig);
@@ -85,15 +94,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         [HttpGet("testConfig")]
         public async Task<bool> TestUserConfig([FromQuery(Name = "guid")] Guid guid)
         {
+            _logger.LogWarning("Testing user config for user: {UserID}", guid);
             UserConfig? uConfig = Plugin.Instance?.Configuration.GetByGuid(guid);
             if (uConfig == null || string.IsNullOrEmpty(uConfig.UserToken))
             {
+                _logger.LogError("Could not retrieve valid config for user with id: {UserID}", guid);
                 return false;
             }
 
             JsonNode? info = await MalApiHandler.GetAnimeID("Jujutsu Kaisen", uConfig).ConfigureAwait(true);
             if (info == null)
             {
+                _logger.LogError("Could not complete api request while trying to validate user: {UserID}", guid);
                 return false;
             }
 
