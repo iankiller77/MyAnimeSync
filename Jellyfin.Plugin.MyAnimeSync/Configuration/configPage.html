@@ -134,6 +134,172 @@
             userSelector: document.querySelector('#user-selector'),
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
 
+            styleFailedAnimeList: function () {
+                var BG     = '#101010', SURF   = '#1a1a1a', SURF2  = '#242424';
+                var BDR    = '#2e2e2e', BDR2   = '#3a3a3a', TXT    = '#dddddd';
+                var MUTED  = '#888888', ACC    = '#aa5cc3';
+                var GRN    = '#53b963', GRN_BG = 'rgba(83,185,99,0.15)';
+                var RED    = '#d65353', RED_BG = 'rgba(214,83,83,0.15)';
+                var R      = '4px';
+
+                var wrap = document.getElementById('FailedAnimeList');
+                if (!wrap) return;
+
+                Object.assign(wrap.style, {
+                    border: '1px solid ' + BDR,
+                    borderRadius: R,
+                    overflow: 'hidden',
+                    fontFamily: "'Segoe UI', system-ui, sans-serif",
+                    fontSize: '14px',
+                    background: SURF
+                });
+
+                var header = document.createElement('div');
+                Object.assign(header.style, {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 14px',
+                    background: SURF2,
+                    borderBottom: '1px solid ' + BDR
+                });
+                var colStyle = {
+                    fontSize: '12px', fontWeight: '500', color: MUTED,
+                    textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: '0'
+                };
+                var hTitle = document.createElement('span');
+                hTitle.textContent = 'Title';
+                Object.assign(hTitle.style, colStyle, { flex: '1' });
+                var hSeason = document.createElement('span');
+                hSeason.textContent = 'Season';
+                Object.assign(hSeason.style, colStyle, { width: '80px', textAlign: 'center' });
+                var hEpisode = document.createElement('span');
+                hEpisode.textContent = 'Episode';
+                Object.assign(hEpisode.style, colStyle, { width: '80px', textAlign: 'center' });
+                var hActions = document.createElement('span');
+                hActions.textContent = 'Actions';
+                Object.assign(hActions.style, colStyle, { width: '98px', textAlign: 'center' });
+                header.appendChild(hTitle);
+                header.appendChild(hSeason);
+                header.appendChild(hEpisode);
+                header.appendChild(hActions);
+                wrap.insertBefore(header, wrap.firstChild);
+
+                var labels = wrap.querySelectorAll('label');
+
+                if (labels.length === 0) {
+                    wrap.textContent = 'No failed updates.';
+                    Object.assign(wrap.style, { padding: '2rem', textAlign: 'center', color: MUTED });
+                    return;
+                }
+
+                labels.forEach(function (label, i) {
+                    Object.assign(label.style, {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 14px',
+                        borderBottom: i < labels.length - 1 ? '1px solid ' + BDR : 'none',
+                        background: SURF,
+                        transition: 'background 0.1s',
+                        cursor: 'default'
+                    });
+                    label.addEventListener('mouseenter', function () { label.style.background = SURF2; });
+                    label.addEventListener('mouseleave', function () { label.style.background = SURF; });
+
+                    var span = label.querySelector('span');
+                    if (span) {
+                        Object.assign(span.style, {
+                            flex: '1', color: TXT, overflow: 'hidden',
+                            textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0'
+                        });
+
+                        var retryBtn = label.querySelector('button:nth-of-type(1)');
+                        var seasonSpan = document.createElement('span');
+                        seasonSpan.textContent = retryBtn ? retryBtn.getAttribute('season') : '';
+                        Object.assign(seasonSpan.style, {
+                            width: '80px', textAlign: 'center', flexShrink: '0',
+                            color: MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                        });
+
+                        var episodeSpan = document.createElement('span');
+                        episodeSpan.textContent = retryBtn ? retryBtn.getAttribute('episode') : '';
+                        Object.assign(episodeSpan.style, {
+                            width: '80px', textAlign: 'center', flexShrink: '0',
+                            color: MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                        });
+
+                        label.appendChild(seasonSpan);
+                        label.appendChild(episodeSpan);
+                    }
+
+                    var ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                    var ICON_RETRY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>';
+                    var ICON_DEL   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+                    var btnWrap = document.createElement('div');
+                    Object.assign(btnWrap.style, { display: 'flex', gap: '5px', flexShrink: '0', width: '98px', justifyContent: 'flex-end' });
+
+                    var editBtn = label.querySelector('button:nth-of-type(1)');
+                    if (editBtn) {
+                        editBtn.innerHTML = ICON_EDIT;
+                        Object.assign(editBtn.style, {
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
+                            border: '1px solid ' + BDR2, background: 'transparent',
+                            color: MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
+                        });
+                        var BLUE = '#4a90d9', BLUE_BG = 'rgba(74,144,217,0.15)';
+                        editBtn.addEventListener('mouseenter', function () {
+                            Object.assign(editBtn.style, { background: BLUE_BG, color: BLUE, border: '1px solid ' + BLUE });
+                        });
+                        editBtn.addEventListener('mouseleave', function () {
+                            Object.assign(editBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
+                        });
+                        btnWrap.appendChild(editBtn);
+                    }
+
+                    var retryBtn = label.querySelector('button:nth-of-type(1)');
+                    if (retryBtn) {
+                        retryBtn.innerHTML = ICON_RETRY;
+                        Object.assign(retryBtn.style, {
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
+                            border: '1px solid ' + BDR2, background: 'transparent',
+                            color: MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
+                        });
+                        retryBtn.addEventListener('mouseenter', function () {
+                            Object.assign(retryBtn.style, { background: GRN_BG, color: GRN, border: '1px solid ' + GRN });
+                        });
+                        retryBtn.addEventListener('mouseleave', function () {
+                            Object.assign(retryBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
+                        });
+                        btnWrap.appendChild(retryBtn);
+                    }
+
+                    var deleteBtn = label.querySelector('button:nth-of-type(1)'); // after retry moved, del is now first
+                    if (deleteBtn) {
+                        deleteBtn.innerHTML = ICON_DEL;
+                        Object.assign(deleteBtn.style, {
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
+                            border: '1px solid ' + BDR2, background: 'transparent',
+                            color: MUTED, fontFamily: 'inherit', flexShrink: '0'
+                        });
+                        deleteBtn.addEventListener('mouseenter', function () {
+                            Object.assign(deleteBtn.style, { background: RED_BG, color: RED, border: '1px solid ' + RED });
+                        });
+                        deleteBtn.addEventListener('mouseleave', function () {
+                            Object.assign(deleteBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
+                        });
+                        btnWrap.appendChild(deleteBtn);
+                    }
+
+                    label.appendChild(btnWrap);
+
+                });
+            },
+
             populateUsers: async function (users) {
                 MyAnimeSyncConfig.userSelector.innerHTML = "";
                 users.forEach(function (user) {
@@ -196,9 +362,19 @@
                 {
                     var label = document.createElement("label");
                     var span = document.createElement("span");
-                    span.style.marginRight = "10px";
-                    span.appendChild(document.createTextNode(result[i].Serie + " - Season : " + result[i].SeasonNumber + " - Ep : " + result[i].EpisodeNumber));
+                    span.appendChild(document.createTextNode(result[i].Serie));
                     label.appendChild(span);
+
+                    // Create edit button for failed update entry
+                    var editButton = document.createElement("button");
+                    editButton.setAttribute("type", "button");
+                    editButton.id = result[i].Serie;
+                    editButton.setAttribute("season", result[i].SeasonNumber);
+                    editButton.setAttribute("episode", result[i].EpisodeNumber);
+                    editButton.style.marginRight = "10px";
+                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('season'), this.getAttribute('episode'))");
+                    editButton.textContent = "Edit";
+                    label.appendChild(editButton);
 
                     // Create retry button for failed update entry
                     var retryButton = document.createElement("button");
@@ -220,11 +396,10 @@
                     deleteButton.textContent = "Delete";
                     label.appendChild(deleteButton);
 
-                    br = document.createElement("br");
-                    label.append(br);
-
                     div.appendChild(label);
                 }
+
+                MyAnimeSyncConfig.styleFailedAnimeList();
             },
 
             populateOptionsContainer: async function (userConfig) {
@@ -247,6 +422,12 @@
                         passwordInput.value = userConfig[key];
                     }
                 }
+            },
+
+            editEntry: async function (serie, season, ep)
+            {
+                console.log("Editing entry : " + serie + " - season : " + season + " - ep : " + ep);
+                // TODO: implement edit logic
             },
 
             deleteFailedEntry: async function (serie, season)
