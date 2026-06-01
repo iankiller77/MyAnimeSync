@@ -441,7 +441,7 @@
                 console.log(uConfig.FailedUpdates);
 
                 await MyAnimeSyncConfig.saveConfig(guid);
-                await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
             },
 
             retryUpdate: async function (serie, season, ep)
