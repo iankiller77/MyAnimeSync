@@ -142,7 +142,10 @@
                 var RED    = '#d65353', RED_BG = 'rgba(214,83,83,0.15)';
                 var R      = '4px';
 
+                // Reset the style to prevent inline style persistence.
                 var wrap = document.getElementById('FailedAnimeList');
+                wrap.style.cssText = ""
+
                 if (!wrap) return;
 
                 Object.assign(wrap.style, {
@@ -300,6 +303,133 @@
                 });
             },
 
+            showEditEntryModal: function (serie, season, ep, onSave)
+            {
+                // Remove any existing modal
+                var existing = document.getElementById('editEntryModal');
+                if (existing) existing.remove();
+
+                // Build modal
+                var overlay = document.createElement('div');
+                overlay.id = 'editEntryModal';
+                Object.assign(overlay.style, {
+                    position: 'fixed', inset: '0', zIndex: '9999',
+                    background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                });
+
+                var dialog = document.createElement('div');
+                Object.assign(dialog.style, {
+                    background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '8px',
+                    padding: '28px 32px', minWidth: '340px', maxWidth: '460px', width: '100%',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)', fontFamily: "'Segoe UI', system-ui, sans-serif",
+                    color: '#dddddd', position: 'relative'
+                });
+
+                // Header
+                var header = document.createElement('div');
+                Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' });
+
+                var title = document.createElement('h3');
+                title.textContent = 'Edit Failed Entry';
+                Object.assign(title.style, { margin: '0', fontSize: '16px', fontWeight: '600', color: '#ffffff', letterSpacing: '0.02em' });
+
+                var closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                Object.assign(closeBtn.style, {
+                    background: 'transparent', border: '1px solid #2e2e2e', borderRadius: '4px',
+                    color: '#888888', cursor: 'pointer', width: '28px', height: '28px',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0'
+                });
+                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: 'rgba(214,83,83,0.15)', color: '#d65353', border: '1px solid #d65353' }); });
+                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: '#888888', border: '1px solid #2e2e2e' }); });
+                closeBtn.addEventListener('click', function () { overlay.remove(); });
+
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+
+                // Helper to build a labeled input row
+                function makeField(labelText, value) {
+                    var wrap = document.createElement('div');
+                    Object.assign(wrap.style, { marginBottom: '16px' });
+
+                    var lbl = document.createElement('label');
+                    lbl.textContent = labelText;
+                    Object.assign(lbl.style, {
+                        display: 'block', fontSize: '11px', fontWeight: '500', color: '#888888',
+                        textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px'
+                    });
+
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = value || '';
+                    Object.assign(input.style, {
+                        width: '100%', boxSizing: 'border-box',
+                        background: '#101010', border: '1px solid #2e2e2e', borderRadius: '4px',
+                        color: '#dddddd', fontSize: '14px', padding: '8px 10px',
+                        outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
+                    });
+                    input.addEventListener('focus', function () { input.style.border = '1px solid #aa5cc3'; });
+                    input.addEventListener('blur',  function () { input.style.border = '1px solid #2e2e2e'; });
+
+                    wrap.appendChild(lbl);
+                    wrap.appendChild(input);
+                    return { wrap, input };
+                }
+
+                var serieField   = makeField('Title',   serie);
+                var seasonField  = makeField('Season',  season);
+                var episodeField = makeField('Episode', ep);
+
+                // Footer buttons
+                var footer = document.createElement('div');
+                Object.assign(footer.style, { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' });
+
+                function makeFooterBtn(label, bg, bgHover, borderColor, borderHover) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = label;
+                    Object.assign(btn.style, {
+                        padding: '8px 18px', borderRadius: '4px', fontSize: '13px', fontWeight: '500',
+                        cursor: 'pointer', border: '1px solid ' + borderColor, background: bg,
+                        color: '#dddddd', fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
+                    });
+                    btn.addEventListener('mouseenter', function () { Object.assign(btn.style, { background: bgHover, border: '1px solid ' + borderHover }); });
+                    btn.addEventListener('mouseleave', function () { Object.assign(btn.style, { background: bg, border: '1px solid ' + borderColor }); });
+                    return btn;
+                }
+
+                var cancelBtn = makeFooterBtn('Cancel', 'transparent', '#242424', '#3a3a3a', '#3a3a3a');
+                cancelBtn.addEventListener('click', function () { overlay.remove(); });
+
+                var saveBtn = makeFooterBtn('Save', 'rgba(170,92,195,0.2)', 'rgba(170,92,195,0.35)', '#aa5cc3', '#aa5cc3');
+                saveBtn.addEventListener('click', function () {
+                    overlay.remove();
+                    onSave(
+                        serieField.input.value.trim(),
+                        seasonField.input.value.trim(),
+                        episodeField.input.value.trim()
+                    );
+                });
+
+                footer.appendChild(cancelBtn);
+                footer.appendChild(saveBtn);
+
+                // Assemble
+                dialog.appendChild(header);
+                dialog.appendChild(serieField.wrap);
+                dialog.appendChild(seasonField.wrap);
+                dialog.appendChild(episodeField.wrap);
+                dialog.appendChild(footer);
+                overlay.appendChild(dialog);
+
+                // Close on backdrop click
+                overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+                document.body.appendChild(overlay);
+                serieField.input.focus();
+            },
+
             populateUsers: async function (users) {
                 MyAnimeSyncConfig.userSelector.innerHTML = "";
                 users.forEach(function (user) {
@@ -426,8 +556,20 @@
 
             editEntry: async function (serie, season, ep)
             {
-                console.log("Editing entry : " + serie + " - season : " + season + " - ep : " + ep);
-                // TODO: implement edit logic
+                MyAnimeSyncConfig.showEditEntryModal(serie, season, ep, async function (newSerie, newSeason, newEp) {
+                    console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Season : " + newSeason + " - Ep : " + newEp);
+
+                    var guid = MyAnimeSyncConfig.userSelector.value;
+                    uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                    var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                    failedEntry.Serie = newSerie
+                    failedEntry.SeasonNumber = newSeason
+                    failedEntry.EpisodeNumber = newEp
+
+                    await MyAnimeSyncConfig.saveConfig(guid);
+                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+                });
             },
 
             deleteFailedEntry: async function (serie, season)
