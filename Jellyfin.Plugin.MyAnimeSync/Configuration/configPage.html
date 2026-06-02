@@ -134,13 +134,18 @@
             userSelector: document.querySelector('#user-selector'),
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
 
+            THEME: {
+                BG:     '#101010', SURF:   '#1a1a1a', SURF2:  '#242424',
+                BDR:    '#2e2e2e', BDR2:   '#3a3a3a', TXT:    '#dddddd',
+                MUTED:  '#888888', ACC:    '#aa5cc3',
+                GRN:    '#53b963', GRN_BG: 'rgba(83,185,99,0.15)',
+                RED:    '#d65353', RED_BG: 'rgba(214,83,83,0.15)',
+                BLUE:   '#4a90d9', BLUE_BG:'rgba(74,144,217,0.15)',
+                R:      '4px'
+            },
+
             styleFailedAnimeList: function () {
-                var BG     = '#101010', SURF   = '#1a1a1a', SURF2  = '#242424';
-                var BDR    = '#2e2e2e', BDR2   = '#3a3a3a', TXT    = '#dddddd';
-                var MUTED  = '#888888', ACC    = '#aa5cc3';
-                var GRN    = '#53b963', GRN_BG = 'rgba(83,185,99,0.15)';
-                var RED    = '#d65353', RED_BG = 'rgba(214,83,83,0.15)';
-                var R      = '4px';
+                var THEME = this.THEME;
 
                 // Reset the style to prevent inline style persistence.
                 var wrap = document.getElementById('FailedAnimeList');
@@ -149,12 +154,12 @@
                 if (!wrap) return;
 
                 Object.assign(wrap.style, {
-                    border: '1px solid ' + BDR,
-                    borderRadius: R,
+                    border: '1px solid ' + THEME.BDR,
+                    borderRadius: THEME.R,
                     overflow: 'hidden',
                     fontFamily: "'Segoe UI', system-ui, sans-serif",
                     fontSize: '14px',
-                    background: SURF
+                    background: THEME.SURF
                 });
 
                 var header = document.createElement('div');
@@ -163,11 +168,11 @@
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 14px',
-                    background: SURF2,
-                    borderBottom: '1px solid ' + BDR
+                    background: THEME.SURF2,
+                    borderBottom: '1px solid ' + THEME.BDR
                 });
                 var colStyle = {
-                    fontSize: '12px', fontWeight: '500', color: MUTED,
+                    fontSize: '12px', fontWeight: '500', color: THEME.MUTED,
                     textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: '0'
                 };
                 var hTitle = document.createElement('span');
@@ -192,7 +197,7 @@
 
                 if (labels.length === 0) {
                     wrap.textContent = 'No failed updates.';
-                    Object.assign(wrap.style, { padding: '2rem', textAlign: 'center', color: MUTED });
+                    Object.assign(wrap.style, { padding: '2rem', textAlign: 'center', color: THEME.MUTED });
                     return;
                 }
 
@@ -202,18 +207,18 @@
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 14px',
-                        borderBottom: i < labels.length - 1 ? '1px solid ' + BDR : 'none',
-                        background: SURF,
+                        borderBottom: i < labels.length - 1 ? '1px solid ' + THEME.BDR : 'none',
+                        background: THEME.SURF,
                         transition: 'background 0.1s',
                         cursor: 'default'
                     });
-                    label.addEventListener('mouseenter', function () { label.style.background = SURF2; });
-                    label.addEventListener('mouseleave', function () { label.style.background = SURF; });
+                    label.addEventListener('mouseenter', function () { label.style.background = THEME.SURF2; });
+                    label.addEventListener('mouseleave', function () { label.style.background = THEME.SURF; });
 
                     var span = label.querySelector('span');
                     if (span) {
                         Object.assign(span.style, {
-                            flex: '1', color: TXT, overflow: 'hidden',
+                            flex: '1', color: THEME.TXT, overflow: 'hidden',
                             textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0'
                         });
 
@@ -222,14 +227,14 @@
                         seasonSpan.textContent = retryBtn ? retryBtn.getAttribute('season') : '';
                         Object.assign(seasonSpan.style, {
                             width: '80px', textAlign: 'center', flexShrink: '0',
-                            color: MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                            color: THEME.MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
                         });
 
                         var episodeSpan = document.createElement('span');
                         episodeSpan.textContent = retryBtn ? retryBtn.getAttribute('episode') : '';
                         Object.assign(episodeSpan.style, {
                             width: '80px', textAlign: 'center', flexShrink: '0',
-                            color: MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                            color: THEME.MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
                         });
 
                         label.appendChild(seasonSpan);
@@ -243,58 +248,38 @@
                     var btnWrap = document.createElement('div');
                     Object.assign(btnWrap.style, { display: 'flex', gap: '5px', flexShrink: '0', width: '98px', justifyContent: 'flex-end' });
 
+                    var btnBaseStyle = {
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '28px', height: '28px', padding: '0', borderRadius: THEME.R, cursor: 'pointer',
+                        border: '1px solid ' + THEME.BDR2, background: 'transparent',
+                        color: THEME.MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
+                    };
+                    function styleActionBtn(btn, icon, hoverColor, hoverBg) {
+                        btn.innerHTML = icon;
+                        Object.assign(btn.style, btnBaseStyle);
+                        btn.addEventListener('mouseenter', function () {
+                            Object.assign(btn.style, { background: hoverBg, color: hoverColor, border: '1px solid ' + hoverColor });
+                        });
+                        btn.addEventListener('mouseleave', function () {
+                            Object.assign(btn.style, { background: 'transparent', color: THEME.MUTED, border: '1px solid ' + THEME.BDR2 });
+                        });
+                    }
+
                     var editBtn = label.querySelector('button:nth-of-type(1)');
                     if (editBtn) {
-                        editBtn.innerHTML = ICON_EDIT;
-                        Object.assign(editBtn.style, {
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
-                            border: '1px solid ' + BDR2, background: 'transparent',
-                            color: MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
-                        });
-                        var BLUE = '#4a90d9', BLUE_BG = 'rgba(74,144,217,0.15)';
-                        editBtn.addEventListener('mouseenter', function () {
-                            Object.assign(editBtn.style, { background: BLUE_BG, color: BLUE, border: '1px solid ' + BLUE });
-                        });
-                        editBtn.addEventListener('mouseleave', function () {
-                            Object.assign(editBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
-                        });
+                        styleActionBtn(editBtn, ICON_EDIT, THEME.BLUE, THEME.BLUE_BG);
                         btnWrap.appendChild(editBtn);
                     }
 
                     var retryBtn = label.querySelector('button:nth-of-type(1)');
                     if (retryBtn) {
-                        retryBtn.innerHTML = ICON_RETRY;
-                        Object.assign(retryBtn.style, {
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
-                            border: '1px solid ' + BDR2, background: 'transparent',
-                            color: MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
-                        });
-                        retryBtn.addEventListener('mouseenter', function () {
-                            Object.assign(retryBtn.style, { background: GRN_BG, color: GRN, border: '1px solid ' + GRN });
-                        });
-                        retryBtn.addEventListener('mouseleave', function () {
-                            Object.assign(retryBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
-                        });
+                        styleActionBtn(retryBtn, ICON_RETRY, THEME.GRN, THEME.GRN_BG);
                         btnWrap.appendChild(retryBtn);
                     }
 
                     var deleteBtn = label.querySelector('button:nth-of-type(1)'); // after retry moved, del is now first
                     if (deleteBtn) {
-                        deleteBtn.innerHTML = ICON_DEL;
-                        Object.assign(deleteBtn.style, {
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '28px', height: '28px', padding: '0', borderRadius: R, cursor: 'pointer',
-                            border: '1px solid ' + BDR2, background: 'transparent',
-                            color: MUTED, fontFamily: 'inherit', flexShrink: '0'
-                        });
-                        deleteBtn.addEventListener('mouseenter', function () {
-                            Object.assign(deleteBtn.style, { background: RED_BG, color: RED, border: '1px solid ' + RED });
-                        });
-                        deleteBtn.addEventListener('mouseleave', function () {
-                            Object.assign(deleteBtn.style, { background: 'transparent', color: MUTED, border: '1px solid ' + BDR2 });
-                        });
+                        styleActionBtn(deleteBtn, ICON_DEL, THEME.RED, THEME.RED_BG);
                         btnWrap.appendChild(deleteBtn);
                     }
 
@@ -305,6 +290,7 @@
 
             showEditEntryModal: function (serie, season, ep, onSave)
             {
+                var THEME = this.THEME;
                 // Remove any existing modal
                 var existing = document.getElementById('editEntryModal');
                 if (existing) existing.remove();
@@ -320,10 +306,10 @@
 
                 var dialog = document.createElement('div');
                 Object.assign(dialog.style, {
-                    background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '8px',
+                    background: THEME.SURF, border: '1px solid ' + THEME.BDR, borderRadius: '8px',
                     padding: '28px 32px', minWidth: '340px', maxWidth: '460px', width: '100%',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.6)', fontFamily: "'Segoe UI', system-ui, sans-serif",
-                    color: '#dddddd', position: 'relative'
+                    color: THEME.TXT, position: 'relative'
                 });
 
                 // Header
@@ -337,12 +323,12 @@
                 var closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
                 Object.assign(closeBtn.style, {
-                    background: 'transparent', border: '1px solid #2e2e2e', borderRadius: '4px',
-                    color: '#888888', cursor: 'pointer', width: '28px', height: '28px',
+                    background: 'transparent', border: '1px solid ' + THEME.BDR, borderRadius: THEME.R,
+                    color: THEME.MUTED, cursor: 'pointer', width: '28px', height: '28px',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0'
                 });
-                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: 'rgba(214,83,83,0.15)', color: '#d65353', border: '1px solid #d65353' }); });
-                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: '#888888', border: '1px solid #2e2e2e' }); });
+                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: THEME.RED_BG, color: THEME.RED, border: '1px solid ' + THEME.RED }); });
+                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: THEME.MUTED, border: '1px solid ' + THEME.BDR }); });
                 closeBtn.addEventListener('click', function () { overlay.remove(); });
 
                 header.appendChild(title);
@@ -356,7 +342,7 @@
                     var lbl = document.createElement('label');
                     lbl.textContent = labelText;
                     Object.assign(lbl.style, {
-                        display: 'block', fontSize: '11px', fontWeight: '500', color: '#888888',
+                        display: 'block', fontSize: '11px', fontWeight: '500', color: THEME.MUTED,
                         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px'
                     });
 
@@ -365,12 +351,12 @@
                     input.value = value || '';
                     Object.assign(input.style, {
                         width: '100%', boxSizing: 'border-box',
-                        background: '#101010', border: '1px solid #2e2e2e', borderRadius: '4px',
-                        color: '#dddddd', fontSize: '14px', padding: '8px 10px',
+                        background: THEME.BG, border: '1px solid ' + THEME.BDR, borderRadius: THEME.R,
+                        color: THEME.TXT, fontSize: '14px', padding: '8px 10px',
                         outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
                     });
-                    input.addEventListener('focus', function () { input.style.border = '1px solid #aa5cc3'; });
-                    input.addEventListener('blur',  function () { input.style.border = '1px solid #2e2e2e'; });
+                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.ACC; });
+                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.BDR; });
 
                     wrap.appendChild(lbl);
                     wrap.appendChild(input);
@@ -390,19 +376,19 @@
                     btn.type = 'button';
                     btn.textContent = label;
                     Object.assign(btn.style, {
-                        padding: '8px 18px', borderRadius: '4px', fontSize: '13px', fontWeight: '500',
+                        padding: '8px 18px', borderRadius: THEME.R, fontSize: '13px', fontWeight: '500',
                         cursor: 'pointer', border: '1px solid ' + borderColor, background: bg,
-                        color: '#dddddd', fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
+                        color: THEME.TXT, fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
                     });
                     btn.addEventListener('mouseenter', function () { Object.assign(btn.style, { background: bgHover, border: '1px solid ' + borderHover }); });
                     btn.addEventListener('mouseleave', function () { Object.assign(btn.style, { background: bg, border: '1px solid ' + borderColor }); });
                     return btn;
                 }
 
-                var cancelBtn = makeFooterBtn('Cancel', 'transparent', '#242424', '#3a3a3a', '#3a3a3a');
+                var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.SURF2, THEME.BDR2, THEME.BDR2);
                 cancelBtn.addEventListener('click', function () { overlay.remove(); });
 
-                var saveBtn = makeFooterBtn('Save', 'rgba(170,92,195,0.2)', 'rgba(170,92,195,0.35)', '#aa5cc3', '#aa5cc3');
+                var saveBtn = makeFooterBtn('Save', 'rgba(170,92,195,0.2)', 'rgba(170,92,195,0.35)', THEME.ACC, THEME.ACC);
                 saveBtn.addEventListener('click', function () {
                     overlay.remove();
                     onSave(
