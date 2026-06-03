@@ -134,6 +134,306 @@
             userSelector: document.querySelector('#user-selector'),
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
 
+            THEME: {
+                // Default Backgrounds
+                pageBg:         '#101010',
+                cardBg:         '#1a1a1a',
+                cardBgHover:    '#242424',
+
+                // Default Borders
+                border:         '#2e2e2e',
+                borderSubtle:   '#3a3a3a',
+                borderRadius:   '4px',
+
+                // Text
+                textPrimary:    '#dddddd',
+                textEmphasis:   '#ffffff',
+                textMuted:      '#888888',
+
+                // Border accent for edit menu
+                accentFocus:    '#aa5cc3',
+
+                // Colors for buttons
+                colorSuccess:   '#53b963',                  colorSuccessBg: 'rgba(83,185,99,0.15)',
+                colorDanger:    '#d65353',                  colorDangerBg:  'rgba(214,83,83,0.15)',
+                colorEdit:      '#4a90d9',                  colorEditBg:    'rgba(74,144,217,0.15)',
+                colorSave:      'rgba(170,92,195,0.2)',     colorSaveHover: 'rgba(170,92,195,0.35)',
+            },
+
+            styleFailedAnimeList: function () {
+                var THEME = this.THEME;
+
+                var failedUpdatesTable = document.getElementById('FailedAnimeList');
+                if (!failedUpdatesTable) return;
+
+                // Reset the style to prevent inline style persistence.
+                failedUpdatesTable.style.cssText = ""
+
+                Object.assign(failedUpdatesTable.style, {
+                    border: '1px solid ' + THEME.border,
+                    borderRadius: THEME.borderRadius,
+                    overflow: 'hidden',
+                    fontFamily: "'Segoe UI', system-ui, sans-serif",
+                    fontSize: '14px',
+                    background: THEME.cardBg
+                });
+
+                var header = document.createElement('div');
+                Object.assign(header.style, {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 14px',
+                    background: THEME.cardBgHover,
+                    borderBottom: '1px solid ' + THEME.border
+                });
+                var colStyle = {
+                    fontSize: '12px', fontWeight: '500', color: THEME.textMuted,
+                    textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: '0'
+                };
+                var hTitle = document.createElement('span');
+                hTitle.textContent = 'Title';
+                Object.assign(hTitle.style, colStyle, { flex: '1' });
+                var hSeason = document.createElement('span');
+                hSeason.textContent = 'Season';
+                Object.assign(hSeason.style, colStyle, { width: '80px', textAlign: 'center' });
+                var hEpisode = document.createElement('span');
+                hEpisode.textContent = 'Episode';
+                Object.assign(hEpisode.style, colStyle, { width: '80px', textAlign: 'center' });
+                var hActions = document.createElement('span');
+                hActions.textContent = 'Actions';
+                Object.assign(hActions.style, colStyle, { width: '98px', textAlign: 'center' });
+                header.appendChild(hTitle);
+                header.appendChild(hSeason);
+                header.appendChild(hEpisode);
+                header.appendChild(hActions);
+                failedUpdatesTable.insertBefore(header, failedUpdatesTable.firstChild);
+
+                var labels = failedUpdatesTable.querySelectorAll('label');
+
+                if (labels.length === 0) {
+                    failedUpdatesTable.textContent = 'No failed updates.';
+                    Object.assign(failedUpdatesTable.style, { padding: '2rem', textAlign: 'center', color: THEME.textMuted });
+                    return;
+                }
+
+                labels.forEach(function (label, i) {
+                    Object.assign(label.style, {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 14px',
+                        borderBottom: i < labels.length - 1 ? '1px solid ' + THEME.border : 'none',
+                        background: THEME.cardBg,
+                        transition: 'background 0.1s',
+                        cursor: 'default'
+                    });
+                    label.addEventListener('mouseenter', function () { label.style.background = THEME.cardBgHover; });
+                    label.addEventListener('mouseleave', function () { label.style.background = THEME.cardBg; });
+
+                    var span = label.querySelector('span');
+                    if (span) {
+                        // The serie span already exists in the original HTML, we only need to update the style.
+                        Object.assign(span.style, {
+                            flex: '1', color: THEME.textPrimary, overflow: 'hidden',
+                            textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0'
+                        });
+
+                        // Season and episode span don't already exists, we have to create them.
+                        var retryBtn = label.querySelector('button:nth-of-type(1)');
+                        var seasonSpan = document.createElement('span');
+                        seasonSpan.textContent = retryBtn ? retryBtn.getAttribute('season') : '';
+                        Object.assign(seasonSpan.style, {
+                            width: '80px', textAlign: 'center', flexShrink: '0',
+                            color: THEME.textMuted, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                        });
+
+                        var episodeSpan = document.createElement('span');
+                        episodeSpan.textContent = retryBtn ? retryBtn.getAttribute('episode') : '';
+                        Object.assign(episodeSpan.style, {
+                            width: '80px', textAlign: 'center', flexShrink: '0',
+                            color: THEME.textMuted, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                        });
+
+                        label.appendChild(seasonSpan);
+                        label.appendChild(episodeSpan);
+                    }
+
+                    var ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                    var ICON_RETRY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>';
+                    var ICON_DEL   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+                    var btnWrap = document.createElement('div');
+                    Object.assign(btnWrap.style, { display: 'flex', gap: '5px', flexShrink: '0', width: '98px', justifyContent: 'flex-end' });
+
+                    var btnBaseStyle = {
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '28px', height: '28px', padding: '0', borderRadius: THEME.borderRadius, cursor: 'pointer',
+                        border: '1px solid ' + THEME.borderSubtle, background: 'transparent',
+                        color: THEME.textMuted, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
+                    };
+                    function styleActionBtn(btn, icon, hoverColor, hoverBg) {
+                        btn.innerHTML = icon;
+                        Object.assign(btn.style, btnBaseStyle);
+                        btn.addEventListener('mouseenter', function () {
+                            Object.assign(btn.style, { background: hoverBg, color: hoverColor, border: '1px solid ' + hoverColor });
+                        });
+                        btn.addEventListener('mouseleave', function () {
+                            Object.assign(btn.style, { background: 'transparent', color: THEME.textMuted, border: '1px solid ' + THEME.borderSubtle });
+                        });
+                    }
+
+                    var editBtn = label.querySelector('button:nth-of-type(1)');
+                    if (editBtn) {
+                        styleActionBtn(editBtn, ICON_EDIT, THEME.colorEdit, THEME.colorEditBg);
+                        btnWrap.appendChild(editBtn);
+                    }
+
+                    var retryBtn = label.querySelector('button:nth-of-type(1)');
+                    if (retryBtn) {
+                        styleActionBtn(retryBtn, ICON_RETRY, THEME.colorSuccess, THEME.colorSuccessBg);
+                        btnWrap.appendChild(retryBtn);
+                    }
+
+                    var deleteBtn = label.querySelector('button:nth-of-type(1)'); // after retry moved, del is now first
+                    if (deleteBtn) {
+                        styleActionBtn(deleteBtn, ICON_DEL, THEME.colorDanger, THEME.colorDangerBg);
+                        btnWrap.appendChild(deleteBtn);
+                    }
+
+                    label.appendChild(btnWrap);
+
+                });
+            },
+
+            showEditEntryModal: function (serie, season, ep, onSave)
+            {
+                var THEME = this.THEME;
+                // Remove any existing modal
+                var existing = document.getElementById('editEntryModal');
+                if (existing) existing.remove();
+
+                // Build modal
+                var overlay = document.createElement('div');
+                overlay.id = 'editEntryModal';
+                Object.assign(overlay.style, {
+                    position: 'fixed', inset: '0', zIndex: '9999',
+                    background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                });
+
+                var dialog = document.createElement('div');
+                Object.assign(dialog.style, {
+                    background: THEME.cardBg, border: '1px solid ' + THEME.border, borderRadius: '8px',
+                    padding: '28px 32px', minWidth: '340px', maxWidth: '460px', width: '100%',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)', fontFamily: "'Segoe UI', system-ui, sans-serif",
+                    color: THEME.textPrimary, position: 'relative'
+                });
+
+                // Header
+                var header = document.createElement('div');
+                Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' });
+
+                var title = document.createElement('h3');
+                title.textContent = 'Edit Failed Entry';
+                Object.assign(title.style, { margin: '0', fontSize: '16px', fontWeight: '600', color: THEME.textEmphasis, letterSpacing: '0.02em' });
+
+                var closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                Object.assign(closeBtn.style, {
+                    background: 'transparent', border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius,
+                    color: THEME.textMuted, cursor: 'pointer', width: '28px', height: '28px',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0'
+                });
+                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: THEME.colorDangerBg, color: THEME.colorDanger, border: '1px solid ' + THEME.colorDanger }); });
+                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: THEME.textMuted, border: '1px solid ' + THEME.border }); });
+                closeBtn.addEventListener('click', function () { overlay.remove(); });
+
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+
+                // Helper to build a labeled input row
+                function makeField(labelText, value) {
+                    var wrap = document.createElement('div');
+                    Object.assign(wrap.style, { marginBottom: '16px' });
+
+                    var lbl = document.createElement('label');
+                    lbl.textContent = labelText;
+                    Object.assign(lbl.style, {
+                        display: 'block', fontSize: '11px', fontWeight: '500', color: THEME.textMuted,
+                        textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px'
+                    });
+
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = value || '';
+                    Object.assign(input.style, {
+                        width: '100%', boxSizing: 'border-box',
+                        background: THEME.pageBg, border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius,
+                        color: THEME.textPrimary, fontSize: '14px', padding: '8px 10px',
+                        outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
+                    });
+                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
+                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+
+                    wrap.appendChild(lbl);
+                    wrap.appendChild(input);
+                    return { wrap, input };
+                }
+
+                var serieField   = makeField('Title',   serie);
+                var seasonField  = makeField('Season',  season);
+                var episodeField = makeField('Episode', ep);
+
+                // Footer buttons
+                var footer = document.createElement('div');
+                Object.assign(footer.style, { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' });
+
+                function makeFooterBtn(label, bg, bgHover, borderColor, borderHover) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = label;
+                    Object.assign(btn.style, {
+                        padding: '8px 18px', borderRadius: THEME.borderRadius, fontSize: '13px', fontWeight: '500',
+                        cursor: 'pointer', border: '1px solid ' + borderColor, background: bg,
+                        color: THEME.textPrimary, fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
+                    });
+                    btn.addEventListener('mouseenter', function () { Object.assign(btn.style, { background: bgHover, border: '1px solid ' + borderHover }); });
+                    btn.addEventListener('mouseleave', function () { Object.assign(btn.style, { background: bg, border: '1px solid ' + borderColor }); });
+                    return btn;
+                }
+
+                var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.cardBgHover, THEME.borderSubtle, THEME.borderSubtle);
+                cancelBtn.addEventListener('click', function () { overlay.remove(); });
+
+                var saveBtn = makeFooterBtn('Save', THEME.colorSave, THEME.colorSaveHover, THEME.accentFocus, THEME.accentFocus);
+                saveBtn.addEventListener('click', function () {
+                    overlay.remove();
+                    onSave(
+                        serieField.input.value.trim(),
+                        seasonField.input.value.trim(),
+                        episodeField.input.value.trim()
+                    );
+                });
+
+                footer.appendChild(cancelBtn);
+                footer.appendChild(saveBtn);
+
+                // Assemble
+                dialog.appendChild(header);
+                dialog.appendChild(serieField.wrap);
+                dialog.appendChild(seasonField.wrap);
+                dialog.appendChild(episodeField.wrap);
+                dialog.appendChild(footer);
+                overlay.appendChild(dialog);
+
+                // Close on backdrop click
+                overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+                document.body.appendChild(overlay);
+                serieField.input.focus();
+            },
+
             populateUsers: async function (users) {
                 MyAnimeSyncConfig.userSelector.innerHTML = "";
                 users.forEach(function (user) {
@@ -196,9 +496,19 @@
                 {
                     var label = document.createElement("label");
                     var span = document.createElement("span");
-                    span.style.marginRight = "10px";
-                    span.appendChild(document.createTextNode(result[i].Serie + " - Season : " + result[i].SeasonNumber + " - Ep : " + result[i].EpisodeNumber));
+                    span.appendChild(document.createTextNode(result[i].Serie));
                     label.appendChild(span);
+
+                    // Create edit button for failed update entry
+                    var editButton = document.createElement("button");
+                    editButton.setAttribute("type", "button");
+                    editButton.id = result[i].Serie;
+                    editButton.setAttribute("season", result[i].SeasonNumber);
+                    editButton.setAttribute("episode", result[i].EpisodeNumber);
+                    editButton.style.marginRight = "10px";
+                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('season'), this.getAttribute('episode'))");
+                    editButton.textContent = "Edit";
+                    label.appendChild(editButton);
 
                     // Create retry button for failed update entry
                     var retryButton = document.createElement("button");
@@ -220,11 +530,10 @@
                     deleteButton.textContent = "Delete";
                     label.appendChild(deleteButton);
 
-                    br = document.createElement("br");
-                    label.append(br);
-
                     div.appendChild(label);
                 }
+
+                MyAnimeSyncConfig.styleFailedAnimeList();
             },
 
             populateOptionsContainer: async function (userConfig) {
@@ -249,6 +558,24 @@
                 }
             },
 
+            editEntry: async function (serie, season, ep)
+            {
+                MyAnimeSyncConfig.showEditEntryModal(serie, season, ep, async function (newSerie, newSeason, newEp) {
+                    console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Season : " + newSeason + " - Ep : " + newEp);
+
+                    var guid = MyAnimeSyncConfig.userSelector.value;
+                    uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                    var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                    failedEntry.Serie = newSerie
+                    failedEntry.SeasonNumber = newSeason
+                    failedEntry.EpisodeNumber = newEp
+
+                    await MyAnimeSyncConfig.saveConfig(guid);
+                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+                });
+            },
+
             deleteFailedEntry: async function (serie, season)
             {
                 console.log("Deleting this : " + serie + " / season : " + season);
@@ -260,7 +587,7 @@
                 console.log(uConfig.FailedUpdates);
 
                 await MyAnimeSyncConfig.saveConfig(guid);
-                await this.loadConfig(MyAnimeSyncConfig.userSelector.value, null);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
             },
 
             retryUpdate: async function (serie, season, ep)
