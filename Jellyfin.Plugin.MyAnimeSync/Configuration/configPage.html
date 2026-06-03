@@ -135,31 +135,47 @@
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
 
             THEME: {
-                BG:     '#101010', SURF:   '#1a1a1a', SURF2:  '#242424',
-                BDR:    '#2e2e2e', BDR2:   '#3a3a3a', TXT:    '#dddddd',
-                MUTED:  '#888888', ACC:    '#aa5cc3',
-                GRN:    '#53b963', GRN_BG: 'rgba(83,185,99,0.15)',
-                RED:    '#d65353', RED_BG: 'rgba(214,83,83,0.15)',
-                BLUE:   '#4a90d9', BLUE_BG:'rgba(74,144,217,0.15)',
-                R:      '4px'
+                // Default Backgrounds
+                pageBg:         '#101010',
+                cardBg:         '#1a1a1a',
+                cardBgHover:    '#242424',
+
+                // Default Borders
+                border:         '#2e2e2e',
+                borderSubtle:   '#3a3a3a',
+                borderRadius:   '4px',
+
+                // Text
+                textPrimary:    '#dddddd',
+                textEmphasis:   '#ffffff',
+                textMuted:      '#888888',
+
+                // Border accent for edit menu
+                accentFocus:    '#aa5cc3',
+
+                // Colors for buttons
+                colorSuccess:   '#53b963',                  colorSuccessBg: 'rgba(83,185,99,0.15)',
+                colorDanger:    '#d65353',                  colorDangerBg:  'rgba(214,83,83,0.15)',
+                colorEdit:      '#4a90d9',                  colorEditBg:    'rgba(74,144,217,0.15)',
+                colorSave:      'rgba(170,92,195,0.2)',     colorSaveHover: 'rgba(170,92,195,0.35)',
             },
 
             styleFailedAnimeList: function () {
                 var THEME = this.THEME;
 
+                var failedUpdatesTable = document.getElementById('FailedAnimeList');
+                if (!failedUpdatesTable) return;
+
                 // Reset the style to prevent inline style persistence.
-                var wrap = document.getElementById('FailedAnimeList');
-                wrap.style.cssText = ""
+                failedUpdatesTable.style.cssText = ""
 
-                if (!wrap) return;
-
-                Object.assign(wrap.style, {
-                    border: '1px solid ' + THEME.BDR,
-                    borderRadius: THEME.R,
+                Object.assign(failedUpdatesTable.style, {
+                    border: '1px solid ' + THEME.border,
+                    borderRadius: THEME.borderRadius,
                     overflow: 'hidden',
                     fontFamily: "'Segoe UI', system-ui, sans-serif",
                     fontSize: '14px',
-                    background: THEME.SURF
+                    background: THEME.cardBg
                 });
 
                 var header = document.createElement('div');
@@ -168,11 +184,11 @@
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 14px',
-                    background: THEME.SURF2,
-                    borderBottom: '1px solid ' + THEME.BDR
+                    background: THEME.cardBgHover,
+                    borderBottom: '1px solid ' + THEME.border
                 });
                 var colStyle = {
-                    fontSize: '12px', fontWeight: '500', color: THEME.MUTED,
+                    fontSize: '12px', fontWeight: '500', color: THEME.textMuted,
                     textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: '0'
                 };
                 var hTitle = document.createElement('span');
@@ -191,13 +207,13 @@
                 header.appendChild(hSeason);
                 header.appendChild(hEpisode);
                 header.appendChild(hActions);
-                wrap.insertBefore(header, wrap.firstChild);
+                failedUpdatesTable.insertBefore(header, failedUpdatesTable.firstChild);
 
-                var labels = wrap.querySelectorAll('label');
+                var labels = failedUpdatesTable.querySelectorAll('label');
 
                 if (labels.length === 0) {
-                    wrap.textContent = 'No failed updates.';
-                    Object.assign(wrap.style, { padding: '2rem', textAlign: 'center', color: THEME.MUTED });
+                    failedUpdatesTable.textContent = 'No failed updates.';
+                    Object.assign(failedUpdatesTable.style, { padding: '2rem', textAlign: 'center', color: THEME.textMuted });
                     return;
                 }
 
@@ -207,34 +223,36 @@
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 14px',
-                        borderBottom: i < labels.length - 1 ? '1px solid ' + THEME.BDR : 'none',
-                        background: THEME.SURF,
+                        borderBottom: i < labels.length - 1 ? '1px solid ' + THEME.border : 'none',
+                        background: THEME.cardBg,
                         transition: 'background 0.1s',
                         cursor: 'default'
                     });
-                    label.addEventListener('mouseenter', function () { label.style.background = THEME.SURF2; });
-                    label.addEventListener('mouseleave', function () { label.style.background = THEME.SURF; });
+                    label.addEventListener('mouseenter', function () { label.style.background = THEME.cardBgHover; });
+                    label.addEventListener('mouseleave', function () { label.style.background = THEME.cardBg; });
 
                     var span = label.querySelector('span');
                     if (span) {
+                        // The serie span already exists in the original HTML, we only need to update the style.
                         Object.assign(span.style, {
-                            flex: '1', color: THEME.TXT, overflow: 'hidden',
+                            flex: '1', color: THEME.textPrimary, overflow: 'hidden',
                             textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0'
                         });
 
+                        // Season and episode span don't already exists, we have to create them.
                         var retryBtn = label.querySelector('button:nth-of-type(1)');
                         var seasonSpan = document.createElement('span');
                         seasonSpan.textContent = retryBtn ? retryBtn.getAttribute('season') : '';
                         Object.assign(seasonSpan.style, {
                             width: '80px', textAlign: 'center', flexShrink: '0',
-                            color: THEME.MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                            color: THEME.textMuted, fontFamily: 'Consolas, monospace', fontSize: '13px'
                         });
 
                         var episodeSpan = document.createElement('span');
                         episodeSpan.textContent = retryBtn ? retryBtn.getAttribute('episode') : '';
                         Object.assign(episodeSpan.style, {
                             width: '80px', textAlign: 'center', flexShrink: '0',
-                            color: THEME.MUTED, fontFamily: 'Consolas, monospace', fontSize: '13px'
+                            color: THEME.textMuted, fontFamily: 'Consolas, monospace', fontSize: '13px'
                         });
 
                         label.appendChild(seasonSpan);
@@ -250,9 +268,9 @@
 
                     var btnBaseStyle = {
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: '28px', height: '28px', padding: '0', borderRadius: THEME.R, cursor: 'pointer',
-                        border: '1px solid ' + THEME.BDR2, background: 'transparent',
-                        color: THEME.MUTED, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
+                        width: '28px', height: '28px', padding: '0', borderRadius: THEME.borderRadius, cursor: 'pointer',
+                        border: '1px solid ' + THEME.borderSubtle, background: 'transparent',
+                        color: THEME.textMuted, fontFamily: 'inherit', marginRight: '0', flexShrink: '0'
                     };
                     function styleActionBtn(btn, icon, hoverColor, hoverBg) {
                         btn.innerHTML = icon;
@@ -261,25 +279,25 @@
                             Object.assign(btn.style, { background: hoverBg, color: hoverColor, border: '1px solid ' + hoverColor });
                         });
                         btn.addEventListener('mouseleave', function () {
-                            Object.assign(btn.style, { background: 'transparent', color: THEME.MUTED, border: '1px solid ' + THEME.BDR2 });
+                            Object.assign(btn.style, { background: 'transparent', color: THEME.textMuted, border: '1px solid ' + THEME.borderSubtle });
                         });
                     }
 
                     var editBtn = label.querySelector('button:nth-of-type(1)');
                     if (editBtn) {
-                        styleActionBtn(editBtn, ICON_EDIT, THEME.BLUE, THEME.BLUE_BG);
+                        styleActionBtn(editBtn, ICON_EDIT, THEME.colorEdit, THEME.colorEditBg);
                         btnWrap.appendChild(editBtn);
                     }
 
                     var retryBtn = label.querySelector('button:nth-of-type(1)');
                     if (retryBtn) {
-                        styleActionBtn(retryBtn, ICON_RETRY, THEME.GRN, THEME.GRN_BG);
+                        styleActionBtn(retryBtn, ICON_RETRY, THEME.colorSuccess, THEME.colorSuccessBg);
                         btnWrap.appendChild(retryBtn);
                     }
 
                     var deleteBtn = label.querySelector('button:nth-of-type(1)'); // after retry moved, del is now first
                     if (deleteBtn) {
-                        styleActionBtn(deleteBtn, ICON_DEL, THEME.RED, THEME.RED_BG);
+                        styleActionBtn(deleteBtn, ICON_DEL, THEME.colorDanger, THEME.colorDangerBg);
                         btnWrap.appendChild(deleteBtn);
                     }
 
@@ -306,10 +324,10 @@
 
                 var dialog = document.createElement('div');
                 Object.assign(dialog.style, {
-                    background: THEME.SURF, border: '1px solid ' + THEME.BDR, borderRadius: '8px',
+                    background: THEME.cardBg, border: '1px solid ' + THEME.border, borderRadius: '8px',
                     padding: '28px 32px', minWidth: '340px', maxWidth: '460px', width: '100%',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.6)', fontFamily: "'Segoe UI', system-ui, sans-serif",
-                    color: THEME.TXT, position: 'relative'
+                    color: THEME.textPrimary, position: 'relative'
                 });
 
                 // Header
@@ -318,17 +336,17 @@
 
                 var title = document.createElement('h3');
                 title.textContent = 'Edit Failed Entry';
-                Object.assign(title.style, { margin: '0', fontSize: '16px', fontWeight: '600', color: '#ffffff', letterSpacing: '0.02em' });
+                Object.assign(title.style, { margin: '0', fontSize: '16px', fontWeight: '600', color: THEME.textEmphasis, letterSpacing: '0.02em' });
 
                 var closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
                 Object.assign(closeBtn.style, {
-                    background: 'transparent', border: '1px solid ' + THEME.BDR, borderRadius: THEME.R,
-                    color: THEME.MUTED, cursor: 'pointer', width: '28px', height: '28px',
+                    background: 'transparent', border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius,
+                    color: THEME.textMuted, cursor: 'pointer', width: '28px', height: '28px',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0'
                 });
-                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: THEME.RED_BG, color: THEME.RED, border: '1px solid ' + THEME.RED }); });
-                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: THEME.MUTED, border: '1px solid ' + THEME.BDR }); });
+                closeBtn.addEventListener('mouseenter', function () { Object.assign(closeBtn.style, { background: THEME.colorDangerBg, color: THEME.colorDanger, border: '1px solid ' + THEME.colorDanger }); });
+                closeBtn.addEventListener('mouseleave', function () { Object.assign(closeBtn.style, { background: 'transparent', color: THEME.textMuted, border: '1px solid ' + THEME.border }); });
                 closeBtn.addEventListener('click', function () { overlay.remove(); });
 
                 header.appendChild(title);
@@ -342,7 +360,7 @@
                     var lbl = document.createElement('label');
                     lbl.textContent = labelText;
                     Object.assign(lbl.style, {
-                        display: 'block', fontSize: '11px', fontWeight: '500', color: THEME.MUTED,
+                        display: 'block', fontSize: '11px', fontWeight: '500', color: THEME.textMuted,
                         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px'
                     });
 
@@ -351,12 +369,12 @@
                     input.value = value || '';
                     Object.assign(input.style, {
                         width: '100%', boxSizing: 'border-box',
-                        background: THEME.BG, border: '1px solid ' + THEME.BDR, borderRadius: THEME.R,
-                        color: THEME.TXT, fontSize: '14px', padding: '8px 10px',
+                        background: THEME.pageBg, border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius,
+                        color: THEME.textPrimary, fontSize: '14px', padding: '8px 10px',
                         outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
                     });
-                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.ACC; });
-                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.BDR; });
+                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
+                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
 
                     wrap.appendChild(lbl);
                     wrap.appendChild(input);
@@ -376,19 +394,19 @@
                     btn.type = 'button';
                     btn.textContent = label;
                     Object.assign(btn.style, {
-                        padding: '8px 18px', borderRadius: THEME.R, fontSize: '13px', fontWeight: '500',
+                        padding: '8px 18px', borderRadius: THEME.borderRadius, fontSize: '13px', fontWeight: '500',
                         cursor: 'pointer', border: '1px solid ' + borderColor, background: bg,
-                        color: THEME.TXT, fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
+                        color: THEME.textPrimary, fontFamily: 'inherit', transition: 'background 0.15s, border 0.15s'
                     });
                     btn.addEventListener('mouseenter', function () { Object.assign(btn.style, { background: bgHover, border: '1px solid ' + borderHover }); });
                     btn.addEventListener('mouseleave', function () { Object.assign(btn.style, { background: bg, border: '1px solid ' + borderColor }); });
                     return btn;
                 }
 
-                var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.SURF2, THEME.BDR2, THEME.BDR2);
+                var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.cardBgHover, THEME.borderSubtle, THEME.borderSubtle);
                 cancelBtn.addEventListener('click', function () { overlay.remove(); });
 
-                var saveBtn = makeFooterBtn('Save', 'rgba(170,92,195,0.2)', 'rgba(170,92,195,0.35)', THEME.ACC, THEME.ACC);
+                var saveBtn = makeFooterBtn('Save', THEME.colorSave, THEME.colorSaveHover, THEME.accentFocus, THEME.accentFocus);
                 saveBtn.addEventListener('click', function () {
                     overlay.remove();
                     onSave(
