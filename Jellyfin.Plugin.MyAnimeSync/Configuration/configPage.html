@@ -158,6 +158,145 @@
                 colorDanger:    '#d65353',                  colorDangerBg:  'rgba(214,83,83,0.15)',
                 colorEdit:      '#4a90d9',                  colorEditBg:    'rgba(74,144,217,0.15)',
                 colorSave:      'rgba(170,92,195,0.2)',     colorSaveHover: 'rgba(170,92,195,0.35)',
+
+                // Sizes
+                fontFamily:         "'Segoe UI', system-ui, sans-serif",
+                fontSizeBase:       '16px',
+                fontSizeSmall:      '14px',
+                fontSizeH1:         '22px',
+                fontSizeH3:         '11px',
+                fontSizeBtn:        '13px',
+                lineHeight:         '1.6',
+                letterSpacing:      '0.07em',
+                formMaxWidth:       '760px',
+                paddingInput:       '8px 10px',
+                paddingBtn:         '9px 18px',
+                paddingCard:        '12px 14px',
+                paddingAuthCard:    '16px',
+            },
+
+            stylePage: function () {
+                var THEME = this.THEME;
+
+                // Page background & form
+                var page = document.getElementById('MyAnimeSyncConfigurationPage');
+                if (page) Object.assign(page.style, { background: THEME.pageBg, color: THEME.textPrimary, fontFamily: THEME.fontFamily });
+
+                var form = document.getElementById('MyAnimeSyncConfigurationForm');
+                if (form) Object.assign(form.style, { maxWidth: THEME.formMaxWidth });
+
+                // Main h1
+                var h1 = document.querySelector('.content-primary h1');
+                if (h1) Object.assign(h1.style, { color: THEME.textEmphasis, fontSize: THEME.fontSizeH1, fontWeight: '600', marginBottom: '20px' });
+
+                // All h3 headings
+                document.querySelectorAll('h3.checkboxListLabel').forEach(function (h) {
+                    Object.assign(h.style, {
+                        fontSize: THEME.fontSizeH3, fontWeight: '500', color: THEME.textMuted,
+                        textTransform: 'uppercase', letterSpacing: THEME.letterSpacing,
+                        margin: '20px 0 8px 0', padding: '0'
+                    });
+                });
+
+                // Buttons with special color
+                function styleBtn(btn, color, bgColor, bgHover) {
+                    Object.assign(btn.style, {
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        padding: THEME.paddingBtn, borderRadius: THEME.borderRadius, fontSize: THEME.fontSizeBtn,
+                        fontWeight: '500', cursor: 'pointer', border: '1px solid ' + color,
+                        background: bgColor, color: color,
+                        fontFamily: THEME.fontFamily,
+                        transition: 'background 0.15s, border 0.15s', width: '100%',
+                        boxSizing: 'border-box', marginBottom: '4px'
+                    });
+                    btn.addEventListener('mouseenter', function () { Object.assign(btn.style, { background: bgHover }); });
+                    btn.addEventListener('mouseleave', function () { Object.assign(btn.style, { background: bgColor }); });
+                }
+
+                // Authenticate button
+                var authBtn = document.querySelector('#authentification button:nth-of-type(1)');
+                if (authBtn) styleBtn(authBtn, THEME.colorEdit, THEME.colorEditBg, 'rgba(74,144,217,0.28)');
+
+                // Validate configuration button
+                var validateBtn = document.querySelector('#authentification button:nth-of-type(2)');
+                if (validateBtn) styleBtn(validateBtn, THEME.colorSuccess, THEME.colorSuccessBg, 'rgba(83,185,99,0.28)');
+
+                // Sync Libraries button
+                var syncBtn = document.querySelector('button[onclick*="syncLibraries"]');
+                if (syncBtn) { syncBtn.style.color = ''; styleBtn(syncBtn, '#c9a227', 'rgba(201,162,39,0.15)', 'rgba(201,162,39,0.28)'); }
+
+                // Delete user config button
+                var deleteBtn = document.querySelector('button[onclick*="deleteUserConfig"]');
+                if (deleteBtn) { deleteBtn.style.color = ''; styleBtn(deleteBtn, THEME.colorDanger, THEME.colorDangerBg, 'rgba(214,83,83,0.28)'); }
+
+                // Save button
+                var saveBtn = document.querySelector('button[type=submit]');
+                if (saveBtn) styleBtn(saveBtn, THEME.accentFocus, THEME.colorSave, THEME.colorSaveHover);
+
+                // Authentication sub-section wrapper
+                var authDiv = document.getElementById('authentification');
+                if (authDiv) {
+                    Object.assign(authDiv.style, {
+                        background: THEME.cardBg, border: '1px solid ' + THEME.border,
+                        borderRadius: THEME.borderRadius, padding: THEME.paddingAuthCard, marginBottom: '12px'
+                    });
+                }
+
+                // Disabled inputs
+                document.querySelectorAll("#configOptionsContainer input[disabled]").forEach(function (inp) {
+                    Object.assign(inp.style, { opacity: '0.55', cursor: 'not-allowed' });
+                });
+
+                // Helper for text/password inputs
+                function styleTextInput(input) {
+                    Object.assign(input.style, {
+                        width: '100%', boxSizing: 'border-box',
+                        background: THEME.pageBg, border: '1px solid ' + THEME.border,
+                        borderRadius: THEME.borderRadius, color: THEME.textPrimary,
+                        fontSize: THEME.fontSizeBase, padding: THEME.paddingInput, outline: 'none',
+                        fontFamily: THEME.fontFamily, transition: 'border 0.15s',
+                        marginBottom: '12px', display: 'block'
+                    });
+                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
+                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+                }
+
+                // All text and password inputs
+                document.querySelectorAll("#configOptionsContainer input[type=text], #configOptionsContainer input[type=password]").forEach(function (input) {
+                    styleTextInput(input);
+                });
+
+                // All checkbox labels
+                document.querySelectorAll("#configOptionsContainer .checkboxContainer").forEach(function (container) {
+                    Object.assign(container.style, {
+                        background: THEME.cardBg, border: '1px solid ' + THEME.border,
+                        borderRadius: THEME.borderRadius, padding: THEME.paddingCard, marginBottom: '10px',
+                        fontFamily: THEME.fontFamily, fontSize: THEME.fontSizeBase
+                    });
+                    var lbl = container.querySelector('label.emby-checkbox-label');
+                    if (lbl) {
+                        Object.assign(lbl.style, { color: THEME.textPrimary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' });
+                        lbl.addEventListener('mouseenter', function () { container.style.background = THEME.cardBgHover; });
+                        lbl.addEventListener('mouseleave', function () { container.style.background = THEME.cardBg; });
+                    }
+                    var desc = container.querySelector('.fieldDescription');
+                    if (desc) {
+                        Object.assign(desc.style, {
+                            color: THEME.textMuted, fontSize: THEME.fontSizeSmall, marginTop: '8px',
+                            lineHeight: THEME.lineHeight, borderTop: '1px solid ' + THEME.borderSubtle, paddingTop: '8px'
+                        });
+                    }
+                });
+
+                // Standalone fieldDescriptions (outside checkboxContainers)
+                document.querySelectorAll("#configOptionsContainer .inputContainer > .fieldDescription").forEach(function (desc) {
+                    Object.assign(desc.style, {
+                        color: THEME.textMuted, fontSize: THEME.fontSizeSmall, marginBottom: '12px',
+                        lineHeight: THEME.lineHeight, padding: THEME.paddingInput,
+                        background: THEME.cardBg, border: '1px solid ' + THEME.border,
+                        borderRadius: THEME.borderRadius
+                    });
+                });
             },
 
             styleFailedAnimeList: function () {
@@ -463,6 +602,9 @@
                 var checkLibDiv = document.getElementById("CheckedLibraries");
                 checkLibDiv.innerHTML = "";
                 ApiClient.getVirtualFolders().then(function (result) {
+                    var THEME = MyAnimeSyncConfig.THEME;
+                    checkLibDiv.style.background = THEME.cardBg;
+
                     var div = document.createElement("div");
                     div.setAttribute("data-role", "controlgroup");
                     checkLibDiv.appendChild(div);
@@ -481,6 +623,7 @@
                         label.appendChild(checkBox);
                         var span = document.createElement("span");
                         span.appendChild(document.createTextNode(result[i].Name));
+                        span.style.color = THEME.textPrimary;
                         label.appendChild(span);
                         div.appendChild(label);
                     }
@@ -533,6 +676,7 @@
                     div.appendChild(label);
                 }
 
+                MyAnimeSyncConfig.stylePage();
                 MyAnimeSyncConfig.styleFailedAnimeList();
             },
 
@@ -769,6 +913,7 @@
                 await Promise.all([
                     window.ApiClient.getUsers().then(MyAnimeSyncConfig.populateUsers),
                     window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, ApiClient.getCurrentUserId()))]);
+                MyAnimeSyncConfig.stylePage();
                 Dashboard.hideLoadingMsg();
             });
 
