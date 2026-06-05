@@ -26,6 +26,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             CodeChallenge = string.Empty;
             AllowNSFW = false;
             OriginalTitleSearch = false;
+            OriginalTitleSearchFallback = false;
             AllowSpecials = false;
             Throttle = true;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
@@ -83,6 +84,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public bool OriginalTitleSearch { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether we want to force using original titles for serie search.
+        /// </summary>
+        public bool OriginalTitleSearchFallback { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether we want to throttle myanimelist.net api requests.
         /// </summary>
         public bool Throttle { get; set; }
@@ -105,50 +111,44 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// <summary>
         /// Update status for failed entries.
         /// </summary>
-        /// <param name="serie">The serie's name.<see cref="string"/>.</param>
-        /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
-        /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
-        /// <param name="retryCount">The amount of time we retried to update this entry.<see cref="int"/>.</param>
+        /// <param name="episodeInfo">The episode's information.<see cref="UpdateEntry"/>.</param>
         /// <param name="success">The success status of the update.<see cref="bool"/>.</param>
-        public void UpdateFailEntries(string serie, int episodeNumber, int seasonNumber, int retryCount = 0, bool success = false)
+        public void UpdateFailEntries(UpdateEntry episodeInfo, bool success = false)
         {
             lock (_failedUpdateLock)
             {
                 // Only retrieve result with same season number since different seasons are separate entries.
-                UpdateEntry? entry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => item.Serie == serie && item.SeasonNumber == seasonNumber);
-                if (entry == null)
+                UpdateEntry? existingFailedEntry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => item.Serie == episodeInfo.Serie && item.SeasonNumber == episodeInfo.SeasonNumber);
+                if (existingFailedEntry == null)
                 {
                     if (success)
                     {
                         return;
                     }
 
-                    entry = new UpdateEntry(serie, episodeNumber, seasonNumber, retryCount);
-
                     List<UpdateEntry> tempList = FailedUpdates.ToList();
-                    tempList.Add(entry);
+                    tempList.Add(episodeInfo);
                     FailedUpdates = tempList.ToArray();
                 }
                 else
                 {
+                    int episodeNumber = episodeInfo.EpisodeNumber;
+                    int retryCount = episodeInfo.RetryCount;
+
                     if (success)
                     {
-                        UpdateRetrySuccess(entry);
+                        UpdateRetrySuccess(existingFailedEntry);
                         return;
                     }
 
-                    if (entry.EpisodeNumber < episodeNumber)
+                    if (existingFailedEntry.EpisodeNumber < episodeNumber)
                     {
-                        entry.EpisodeNumber = episodeNumber;
+                        existingFailedEntry.EpisodeNumber = episodeNumber;
                         retryCount = 0;
-                    }
-                    else if (retryCount != 0)
-                    {
-                        entry.RetryCount = retryCount;
                     }
                     else
                     {
-                        UpdateRetryFailed(entry);
+                        existingFailedEntry.RetryCount += 1;
                     }
                 }
 
@@ -167,15 +167,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             FailedUpdates = tempList.ToArray();
 
             Plugin.Instance?.SaveConfiguration();
-        }
-
-        /// <summary>
-        /// Update status for failed entries, this will increment retry count.
-        /// </summary>
-        /// <param name="entry">The serie's name.<see cref="UpdateEntry"/>.</param>
-        private void UpdateRetryFailed(UpdateEntry entry)
-        {
-            UpdateFailEntries(entry.Serie, entry.EpisodeNumber, entry.SeasonNumber, entry.RetryCount + 1);
         }
 
         /// <summary>

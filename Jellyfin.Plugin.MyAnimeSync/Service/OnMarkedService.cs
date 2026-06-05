@@ -324,26 +324,53 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         /// <summary>
         /// Update anime watch list on MyAnimeList when an episode is marked as watched.
         /// </summary>
-        /// <param name="serie">The serie's name.<see cref="string"/>.</param>
-        /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
-        /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
+        /// <param name="episode">Object containing episode information.<see cref="Episode"/>.</param>
         /// <param name="userConfig">The user config. <see cref="UserConfig"/>.</param>
         /// <param name="logger">The logger. <see cref="ILogger"/>.</param>
         /// <returns> The task. </returns>
-        public static async Task<bool> UpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        public static async Task<bool> UpdateAnimeList(UpdateEntry episode, UserConfig userConfig, ILogger logger)
         {
             bool success;
 
-            if (seasonNumber == null || seasonNumber > 0)
+            string serie = episode.Serie;
+            bool fallbackSearch = false;
+
+            // Try to use the original serie name
+            if (userConfig.OriginalTitleSearch)
+            {
+                if (!string.IsNullOrWhiteSpace(episode.OriginalSerieTitle))
+                {
+                    serie = episode.OriginalSerieTitle;
+                    if (userConfig.OriginalTitleSearchFallback)
+                    {
+                        fallbackSearch = true;
+                    }
+                }
+            }
+
+            int episodeNumber = episode.EpisodeNumber;
+            int seasonNumber = episode.SeasonNumber;
+
+            if (seasonNumber > 0)
             {
                 success = await InternalUpdateAnimeList(serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+                // Determine if the fallback to default search name applies
+                if (fallbackSearch && !success)
+                {
+                    success = await InternalUpdateAnimeList(episode.Serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+                }
             }
             else
             {
                 success = await InternalUpdateAnimeListSpecial(serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
+                // Determine if the fallback to default search name applies
+                if (fallbackSearch && !success)
+                {
+                    success = await InternalUpdateAnimeListSpecial(episode.Serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
+                }
             }
 
-            userConfig.UpdateFailEntries(serie, episodeNumber, seasonNumber ?? 1, success: success);
+            userConfig.UpdateFailEntries(episode, success: success);
 
             return success;
         }
@@ -371,24 +398,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
                 if (eventArgs.Item is Episode episode)
                 {
-                    string serie = episode.SeriesName;
-
-                    // Try to use the original serie name
-                    if (userConfig.OriginalTitleSearch)
-                    {
-                        if (!string.IsNullOrWhiteSpace(episode.Series.OriginalTitle))
-                        {
-                            serie = episode.Series.OriginalTitle;
-                        }
-                    }
-
                     List<VirtualFolderInfo> virtualFolders = _libraryManager.GetVirtualFolders();
                     Folder? folder = episode.Series.GetParent() as Folder;
                     if (folder == null)
                     {
                         _logger.LogError(
                             "Could not retrieve folder associated with episode : {AnimeName}",
-                            serie);
+                            episode.SeriesName);
                         return;
                     }
 
@@ -397,16 +413,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    int? episodeNumber = episode.IndexNumber;
-                    if (episodeNumber == null || episode.AiredSeasonNumber == null)
+                    if (episode.IndexNumber == null || episode.AiredSeasonNumber == null)
                     {
                         _logger.LogError(
                             "Could not retrieve episode number for : {AnimeName}",
-                            serie);
+                            episode.SeriesName);
                         return;
                     }
 
-                    await UpdateAnimeList(serie, episodeNumber.Value, episode.AiredSeasonNumber, userConfig, _logger).ConfigureAwait(false);
+                    UpdateEntry entry = new UpdateEntry(episode.SeriesName, episode.Series.OriginalTitle ?? string.Empty, episode.IndexNumber.Value, episode.AiredSeasonNumber.Value);
+                    await UpdateAnimeList(entry, userConfig, _logger).ConfigureAwait(false);
                 }
             }
         }

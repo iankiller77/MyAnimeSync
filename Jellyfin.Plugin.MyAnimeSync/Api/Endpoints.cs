@@ -182,7 +182,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (itemData.Played)
                                     {
-                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, episode.IndexNumber.Value, episode.AiredSeasonNumber, uConfig, _logger).ConfigureAwait(false);
+                                        UpdateEntry entry = new UpdateEntry(episode.SeriesName, episode.Series.OriginalTitle ?? string.Empty, episode.IndexNumber.Value, episode?.AiredSeasonNumber ?? 1);
+                                        _ = OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }
                                 else if (item is Season)
@@ -222,7 +223,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (maxEpisodeNumber > 0)
                                     {
-                                        _ = OnMarkedService.UpdateAnimeList(serie.Name, maxEpisodeNumber, season.IndexNumber, uConfig, _logger).ConfigureAwait(false);
+                                        UpdateEntry entry = new UpdateEntry(serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1);
+                                        _ = OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -249,7 +251,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            return await OnMarkedService.UpdateAnimeList(serie, episode, season, uConfig, _logger).ConfigureAwait(true);
+            UpdateEntry entry = new UpdateEntry(serie, string.Empty, episode, season);
+            return await OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(true);
         }
     }
 }
