@@ -913,7 +913,6 @@
                 await Promise.all([
                     window.ApiClient.getUsers().then(MyAnimeSyncConfig.populateUsers),
                     window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, ApiClient.getCurrentUserId()))]);
-                MyAnimeSyncConfig.stylePage();
                 Dashboard.hideLoadingMsg();
             });
 
