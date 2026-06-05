@@ -133,7 +133,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
                 else
                 {
                     int episodeNumber = episodeInfo.EpisodeNumber;
-                    int retryCount = episodeInfo.RetryCount;
 
                     if (success)
                     {
@@ -144,7 +143,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
                     if (existingFailedEntry.EpisodeNumber < episodeNumber)
                     {
                         existingFailedEntry.EpisodeNumber = episodeNumber;
-                        retryCount = 0;
+                        existingFailedEntry.RetryCount = 0;
                     }
                     else
                     {
