@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.HttpHelper;
@@ -160,13 +161,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         }
 
         /// <summary>
-        /// Remove special characters from a string.
+        /// Remove all special characters and trailing spaces from the string.
         /// </summary>
         /// <param name="str">The string to edit.</param>
-        /// <returns>The string with no special characters.</returns>
-        public static string RemoveSpecialCharacters(string str)
+        /// <returns>The edited string.</returns>
+        public static string CleanUpTitle(string str)
         {
-            return new string(str.Select(c => !(char.IsLetterOrDigit(c) || char.IsWhiteSpace(c)) ? ' ' : c).ToArray());
+            string newString = new string(str.Select(c => !(char.IsLetterOrDigit(c) || char.IsWhiteSpace(c)) ? ' ' : c).ToArray());
+
+            return Regex.Replace(newString, @"\s+", " ").Trim();
         }
 
         /// <summary>
@@ -210,7 +213,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             if (matchingEntries.Count < 1)
             {
                 // Remove special characters
-                string formatedName = RemoveSpecialCharacters(animeName);
+                string formatedName = CleanUpTitle(animeName);
                 string[] words = formatedName.Split(" ");
                 int mostWordMatched = 0;
                 foreach (Node node in entry)
@@ -220,17 +223,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                     {
                         if (node.SearchEntry.Title != null)
                         {
-                            node.SearchEntry.Title = RemoveSpecialCharacters(node.SearchEntry.Title);
+                            node.SearchEntry.Title = CleanUpTitle(node.SearchEntry.Title);
                         }
 
                         if (node.SearchEntry.AlternativeTitles != null && node.SearchEntry.AlternativeTitles.EnglishTitle != null)
                         {
-                            node.SearchEntry.AlternativeTitles.EnglishTitle = RemoveSpecialCharacters(node.SearchEntry.AlternativeTitles.EnglishTitle);
+                            node.SearchEntry.AlternativeTitles.EnglishTitle = CleanUpTitle(node.SearchEntry.AlternativeTitles.EnglishTitle);
                         }
 
                         if (node.SearchEntry.AlternativeTitles != null && node.SearchEntry.AlternativeTitles.JapaneseTitle != null)
                         {
-                            node.SearchEntry.AlternativeTitles.JapaneseTitle = RemoveSpecialCharacters(node.SearchEntry.AlternativeTitles.JapaneseTitle);
+                            node.SearchEntry.AlternativeTitles.JapaneseTitle = CleanUpTitle(node.SearchEntry.AlternativeTitles.JapaneseTitle);
                         }
                     }
 
