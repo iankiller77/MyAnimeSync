@@ -11,6 +11,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         private UpdateEntry()
         {
             Serie = string.Empty;
+            OriginalSerieTitle = string.Empty;
             EpisodeNumber = 0;
             SeasonNumber = 0;
             RetryCount = 0;
@@ -20,12 +21,14 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Initializes a new instance of the <see cref="UpdateEntry"/> class.
         /// </summary>
         /// <param name="serie">The serie's name.<see cref="string"/>.</param>
+        /// <param name="originalSerieTitle">The serie's original title name.<see cref="string"/>.</param>
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
         /// <param name="retryCount">The amount of times we tried to update the user list.<see cref="int"/>.</param>
-        public UpdateEntry(string serie, int episodeNumber, int seasonNumber, int retryCount = 0)
+        public UpdateEntry(string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int retryCount = 0)
         {
             Serie = serie;
+            OriginalSerieTitle = originalSerieTitle;
             EpisodeNumber = episodeNumber;
             SeasonNumber = seasonNumber;
             RetryCount = retryCount;
@@ -35,6 +38,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets the serie's name.
         /// </summary>
         public string Serie { get; set; }
+
+        /// <summary>
+        /// Gets or sets the serie's name.
+        /// </summary>
+        public string OriginalSerieTitle { get; set; }
 
         /// <summary>
         /// Gets or sets the episode number.

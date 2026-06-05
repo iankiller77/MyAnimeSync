@@ -74,9 +74,18 @@
                                 <span style="color:yellow">Use series original title</span>
                             </label>
                             <div class="fieldDescription">
-                                When this option is enable, the original series title will be used for the search when possible.<br>
+                                When this option is enable, the original series title will be used for the search if possible.<br>
                                 This option is not enable by default since it has not been tested with enough titles.<br>
                                 Should be used with caution!
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top: 10px;">
+                                <label class="emby-checkbox-label">
+                                    <input id="OriginalTitleSearchFallback" type="checkbox" is="emby-checkbox" />
+                                    <span style="color:yellow">Use jellyfin title as fallback</span>
+                                </label>
+                                <div class="fieldDescription">
+                                    When this option is enabled, if we fail to find the anime with the original title, we will try to use the default search behaviour.
+                                </div>
                             </div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
@@ -764,6 +773,8 @@
                         ClientSecret: "",
                         AllowNSFW: false,
                         OriginalTitleSearch: false,
+                        OriginalTitleSearchFallback: false,
+                        Throttle: true,
                         ListMonitoredLibraryGuid: [],
                         FailedUpdates: []
                     })
