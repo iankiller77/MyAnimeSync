@@ -13,8 +13,8 @@ on:
 
 jobs:
   call:
-    uses: jellyfin/jellyfin-meta-plugins/.github/workflows/changelog.yaml@master
+    uses: iankiller77/jellyfin-meta-plugins/.github/workflows/changelog.yaml@master
     with:
-      repository-name: iankiller77/jellyfin-plugin-template
+      repository-name: iankiller77/MyAnimeSync
     secrets:
       token: ${{secrets.MY_GITHUB_TOKEN}}
