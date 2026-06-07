@@ -5,12 +5,18 @@ on:
     types:
       - released
   workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "Release version (e.g. v1.6.0.0)"
 
 jobs:
   call:
     uses: iankiller77/jellyfin-meta-plugins/.github/workflows/publish.yaml@master
     with:
-      version: ${{ github.event.release.tag_name }}
-      is-unstable: ${{ github.event.release.prerelease }}
+      repository-name: iankiller77/MyAnimeSync
+      version: ${{ github.event.release.tag_name || inputs.version }}
+      is-unstable: ${{ github.event.release.prerelease || false }}
     secrets:
       token: ${{ secrets.MY_GITHUB_TOKEN }}
