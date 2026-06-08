@@ -1,0 +1,43 @@
+name: Refresh MAL Token
+
+on:
+  schedule:
+    - cron: '0 0 */5 * *'
+  workflow_dispatch:
+
+jobs:
+  refresh-token:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.MY_GITHUB_MAL_TOKEN }}
+    steps:
+      - name: Refresh MAL access token
+        id: get_token
+        run: |
+          RESPONSE=$(curl -s -X POST https://myanimelist.net/v1/oauth2/token \
+            -d "grant_type=refresh_token" \
+            -d "client_id=${{ secrets.MAL_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.MAL_CLIENT_SECRET }}" \
+            -d "refresh_token=${{ secrets.MAL_REFRESH_TOKEN }}")
+          
+          if echo $RESPONSE | jq -e '.error' > /dev/null; then
+            echo "Token refresh failed"
+            exit 1
+          fi
+
+          ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
+          REFRESH_TOKEN=$(echo $RESPONSE | jq -r '.refresh_token')
+
+          echo "::add-mask::$ACCESS_TOKEN"
+          echo "::add-mask::$REFRESH_TOKEN"
+
+          echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+          echo "refresh_token=$REFRESH_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Update secrets
+        env:
+          ACCESS_TOKEN: ${{ steps.get_token.outputs.access_token }}
+          REFRESH_TOKEN: ${{ steps.get_token.outputs.refresh_token }}
+        run: |
+          gh secret set MAL_ACCESS_TOKEN --body "$ACCESS_TOKEN" --repo ${{ github.repository }}
+          gh secret set MAL_REFRESH_TOKEN --body "$REFRESH_TOKEN" --repo ${{ github.repository }}
