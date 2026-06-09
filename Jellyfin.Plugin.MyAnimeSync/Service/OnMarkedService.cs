@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Api.TVDB;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -155,30 +156,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        private static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
         {
-            // Update tokens if needed before using the api.
-            if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
-            {
-                logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
-            }
-
-            int? id = await MalApiHandler.GetAnimeID(serie, userConfig).ConfigureAwait(true);
+            int? id = MalApiHandler.GetAnimeID(serie, userConfig).Result;
             if (id == null)
             {
                 logger.LogError(
                     "Could not retrieve id for anime : {AnimeName}",
                     serie);
-                return false;
+                return null;
             }
 
-            AnimeData? info = await MalApiHandler.GetAnimeInfo(id.Value, userConfig).ConfigureAwait(true);
+            AnimeData? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig).Result;
             if (info == null || info.ID == null || info.EpisodeCount == null)
             {
                 logger.LogError(
                     "Could not retrieve anime info for id : {ID}",
                     id);
-                return false;
+                return null;
             }
 
             int seasonOffset = seasonNumber - 1 ?? 0;
@@ -186,7 +181,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             // If we have a specified anime season.
             while (seasonOffset > 0)
             {
-                info = await GetAnimeSequel(info, userConfig, logger).ConfigureAwait(true);
+                info = GetAnimeSequel(info, userConfig, logger).Result;
                 if (info == null || info.ID == null || info.EpisodeCount == null || info.Title == null || info.MediaType == null || info.AlternativeTitles == null || info.AlternativeTitles.EnglishTitle == null)
                 {
                     logger.LogError(
@@ -195,7 +190,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
                     // TODO: Check if we can try to find the absolute episode number instead of the season number. (For anime like one piece)
                     // int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
-                    return false;
+                    return null;
                 }
 
                 // Ignore anime movie for season offset.
@@ -237,20 +232,42 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             while (info.EpisodeCount > 0 && info.EpisodeCount < episodeNumber)
             {
                 episodeNumber -= info.EpisodeCount.Value;
-                info = await GetAnimeSequel(info, userConfig, logger).ConfigureAwait(true);
+                info = GetAnimeSequel(info, userConfig, logger).Result;
                 if (info == null || info.ID == null || info.EpisodeCount == null)
                 {
                     logger.LogError(
                         "Could not retrieve expected sequel using episode offset for anime : {ID}",
                         id);
-                    return false;
+                    return null;
                 }
+            }
+
+            return info;
+        }
+
+        internal static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        {
+            // Update tokens if needed before using the api.
+            if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
+            {
+                logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
+            }
+
+            AnimeData? info = null;
+            await Task.Run(() =>
+            {
+                info = InternalRetrieveAnimeData(serie, ref episodeNumber, seasonNumber, userConfig, logger);
+            }).ConfigureAwait(true);
+
+            if (info == null)
+            {
+                return false;
             }
 
             return UpdateUserList(serie, episodeNumber, seasonNumber, info, userConfig, logger);
         }
 
-        private static async Task<bool> InternalUpdateAnimeListSpecial(string serie, int episodeNumber, UserConfig userConfig, ILogger logger)
+        internal static async Task<bool> InternalUpdateAnimeListSpecial(string serie, int episodeNumber, UserConfig userConfig, ILogger logger)
         {
             if (!userConfig.AllowSpecials)
             {
