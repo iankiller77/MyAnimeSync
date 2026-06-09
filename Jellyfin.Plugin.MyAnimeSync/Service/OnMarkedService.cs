@@ -430,7 +430,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    if (episode.IndexNumber == null || episode.AiredSeasonNumber == null)
+                    if (episode.IndexNumber == null)
                     {
                         _logger.LogError(
                             "Could not retrieve episode number for : {AnimeName}",
@@ -438,7 +438,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    UpdateEntry entry = new UpdateEntry(episode.SeriesName, episode.Series.OriginalTitle ?? string.Empty, episode.IndexNumber.Value, episode.AiredSeasonNumber.Value);
+                    UpdateEntry entry = new UpdateEntry(episode.SeriesName, episode.Series.OriginalTitle ?? string.Empty, episode.IndexNumber.Value, episode.AiredSeasonNumber ?? 1);
                     await UpdateAnimeList(entry, userConfig, _logger).ConfigureAwait(false);
                 }
             }
