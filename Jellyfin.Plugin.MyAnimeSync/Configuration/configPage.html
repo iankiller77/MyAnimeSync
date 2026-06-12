@@ -35,14 +35,15 @@
                                 Authenticate User
                             </button>
                             <div class="fieldDescription">
-                                Press this button for user authentification then navigate to url bellow in your favorite web browser.
+                                Press this button for user authentification then navigate to url below in your favorite web browser.<br>
+                                You can click on the generated Api Url to copy it to your clipboard.
                             </div>
                             <input is="emby-input" id="authenticationUrl" type="text" label="Api Url:" disabled/>
                             <button is="emby-button" type="button" onclick="MyAnimeSyncConfig.validateConfiguration();" class="raised block">
                                 Validate configuration
                             </button>
                             <div class="fieldDescription">
-                                Press this button only after completing the previous steps or if the authentication process was previously completed.
+                                Press this button only after completing the previous steps or if the authentication process was previously completed.<br>
                                 If the result of this button isn't positive, the plugin will not work for the user.
                             </div>
                         </div>
@@ -876,6 +877,24 @@
                             console.log(json);
                             var urlLabel = document.getElementById("authenticationUrl");
                             urlLabel.value = json;
+
+                            // Make authentication url input clickable -> copy on click + indicator
+                            var wrapper = document.createElement('div');
+                            wrapper.style.cssText = 'position:relative;';
+                            urlLabel.parentNode.insertBefore(wrapper, urlLabel);
+                            wrapper.appendChild(urlLabel);
+                            var overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;';
+                            wrapper.appendChild(overlay);
+                            overlay.addEventListener("click", function(e) {
+                                navigator.clipboard.writeText(urlLabel.value).then(() => {
+                                    var t = document.createElement('div');
+                                    t.textContent = 'Link copied to clipboard!';
+                                    t.style.cssText = 'position:fixed;top:' + (e.clientY - 10) + 'px;left:' + (e.clientX + 12) + 'px;background:#323232;color:#fff;padding:10px 20px;border-radius:6px;font-size:14px;z-index:9999;opacity:1;transition:opacity 0.5s ease;';
+                                    document.body.appendChild(t);
+                                    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 2000);
+                                });
+                            });
                         }
                     );
                 }
