@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.6.1.0",
+                "changelog": "### :tada: New features and improvements\n- feature/copy api url on click (#51) @iankiller77\n### :bug: Bug Fixes\n- bug/wrong_edit_window_location_on_jellyfin_app (#53) @iankiller77\n- bug/label_first_button_function_bleeding_into_the_label (#52) @iankiller77\n- bug/fix_search_regression_with_unidentified_season_number (#50) @iankiller77",
+                "targetAbi": "10.11.11.0",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.6.1.0/myanimesync_1.6.1.0.zip",
+                "checksum": "fcd3be4fa1adad843b1cfbc7284950cd",
+                "timestamp": "2026-06-16T05:10:23Z"
+            },
+            {
                 "version": "1.6.0.0",
                 "changelog": "### Major features and improvements\n- Refactor/improvement to the UI using theme (#41) @iankiller77\n### New features and improvements\n- Feature/add option to use library name if original serie title failed (#42) @iankiller77\n- Feature/improve failed update list useability (#39) @iankiller77\n### Bug Fixes\n- bug/properly_cleanup_series_title_name (#43) @iankiller77",
                 "targetAbi": "10.11.11.0",
