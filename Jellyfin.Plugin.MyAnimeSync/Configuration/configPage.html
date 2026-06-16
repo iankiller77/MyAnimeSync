@@ -358,21 +358,21 @@
                 header.appendChild(hActions);
                 failedUpdatesTable.insertBefore(header, failedUpdatesTable.firstChild);
 
-                var labels = failedUpdatesTable.querySelectorAll('label');
+                var failedEntryRow = failedUpdatesTable.querySelectorAll('.failed-entry-row');
 
-                if (labels.length === 0) {
+                if (failedEntryRow.length === 0) {
                     failedUpdatesTable.textContent = 'No failed updates.';
                     Object.assign(failedUpdatesTable.style, { padding: '2rem', textAlign: 'center', color: THEME.textMuted });
                     return;
                 }
 
-                labels.forEach(function (label, i) {
+                failedEntryRow.forEach(function (label, i) {
                     Object.assign(label.style, {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 14px',
-                        borderBottom: i < labels.length - 1 ? '1px solid ' + THEME.border : 'none',
+                        borderBottom: i < failedEntryRow.length - 1 ? '1px solid ' + THEME.border : 'none',
                         background: THEME.cardBg,
                         transition: 'background 0.1s',
                         cursor: 'default'
@@ -647,7 +647,8 @@
                 var result = userConfig.FailedUpdates;
                 for (var i = 0; i < result.length; i++)
                 {
-                    var label = document.createElement("label");
+                    var label = document.createElement("div");
+                    label.classList.add("failed-entry-row");
                     var span = document.createElement("span");
                     span.appendChild(document.createTextNode(result[i].Serie));
                     label.appendChild(span);
