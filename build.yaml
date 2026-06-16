@@ -1,7 +1,7 @@
 ---
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
-version: "1.6.0.0"
+version: "1.6.1.0"
 targetAbi: "10.11.11.0"
 framework: "net9.0"
 overview: "Synchronise watch status on myanimelist."
@@ -13,10 +13,9 @@ owner: "iankiller77"
 artifacts:
   - "Jellyfin.Plugin.MyAnimeSync.dll"
 changelog: |-
-  ### :rocket: Major features and improvements
-  - Refactor/improvement to the UI using theme (#41) @iankiller77
   ### :tada: New features and improvements
-  - Feature/add option to use library name if original serie title failed (#42) @iankiller77
-  - Feature/improve failed update list useability (#39) @iankiller77
+  - feature/copy api url on click (#51) @iankiller77
   ### :bug: Bug Fixes
-  - bug/properly_cleanup_series_title_name (#43) @iankiller77
+  - bug/wrong_edit_window_location_on_jellyfin_app (#53) @iankiller77
+  - bug/label_first_button_function_bleeding_into_the_label (#52) @iankiller77
+  - bug/fix_search_regression_with_unidentified_season_number (#50) @iankiller77
