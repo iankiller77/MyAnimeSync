@@ -458,6 +458,7 @@
             showEditEntryModal: function (serie, season, ep, onSave)
             {
                 var THEME = this.THEME;
+
                 // Remove any existing modal
                 var existing = document.getElementById('editEntryModal');
                 if (existing) existing.remove();
@@ -466,7 +467,8 @@
                 var overlay = document.createElement('div');
                 overlay.id = 'editEntryModal';
                 Object.assign(overlay.style, {
-                    position: 'fixed', inset: '0', zIndex: '9999',
+                    position: 'fixed', top: '0', left: '0',
+                    width: '100vw', height: '100vh', zIndex: '9999',
                     background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                 });
