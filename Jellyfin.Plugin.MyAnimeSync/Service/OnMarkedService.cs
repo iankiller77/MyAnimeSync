@@ -117,7 +117,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             // Only check and update user library while nothing is currently being updated.
             lock (GetLock(serie))
             {
-#pragma warning disable CA1849
                 // Retrieve anime status in user library.
                 UserAnimeInfo entry = MalApiHandler.GetUserAnimeInfo(info.ID.Value, userConfig).Result;
                 if (!entry.SuccessStatus)
@@ -152,7 +151,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
                 // Update anime status
                 return MalApiHandler.UpdateUserInfo(info.ID.Value, episodeNumber, status, userConfig).Result;
-#pragma warning restore CA1849
             }
         }
 
