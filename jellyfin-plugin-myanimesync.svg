@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="malBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4FC3F7"/>
+      <stop offset="100%" style="stop-color:#2E51A2"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" gradientUnits="userSpaceOnUse" x1="107" y1="350" x2="767" y2="730">
+      <stop offset="0%" style="stop-color:#4FC3F7"/>
+      <stop offset="100%" style="stop-color:#2E81D2"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="textglow" x="-5%" y="-20%" width="110%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <circle cx="437" cy="540" r="330" fill="#2E51A2" opacity="0.12"/>
+  <circle cx="437" cy="540" r="216" fill="#4FC3F7" opacity="0.07"/>
+
+  <!-- Arc 1 (TOP) -->
+  <path d="M 120.7,424.9 A 336.6,336.6 0 0 1 749.7,405.7"
+        fill="none" stroke="url(#arrowGrad)" stroke-width="32"
+        stroke-linecap="round" filter="url(#glow)"/>
+  <polyline points="764.6,347.5 751.4,425.7 690.8,373.8"
+            fill="none" stroke="url(#arrowGrad)" stroke-width="32"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arc 2 (BOT) -->
+  <path d="M 753.8,655.3 A 337.1,337.1 0 0 1 123.7,674.0"
+        fill="none" stroke="url(#arrowGrad)" stroke-width="32"
+        stroke-linecap="round" filter="url(#glow)"/>
+  <polyline points="108.7,732.4 121.9,654.3 182.6,706.1"
+            fill="none" stroke="url(#arrowGrad)" stroke-width="32"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Play triangle -->
+  <polygon points="322.3,396.6 322.3,683.4 594.7,540"
+           fill="none" stroke="url(#malBlue)" stroke-width="40"
+           stroke-linejoin="round" filter="url(#glow)"/>
+
+  <!-- Divider -->
+  <line x1="874" y1="160" x2="874" y2="920" stroke="#2E51A240" stroke-width="7"/>
+
+  <!-- Title: x=962 (centered), baseline y=500 -->
+  <text x="962" y="500"
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+        font-size="128" font-weight="700"
+        fill="#FFFFFF" filter="url(#textglow)" letter-spacing="-2">MyAnimeSync</text>
+
+  <!-- Accent line: x=942, width=910, equal 68px margins each side of divider -->
+  <rect x="942" y="555" width="910" height="10" rx="5" fill="url(#arrowGrad)" opacity="0.4"/>
+
+  <!-- Description: x=962, textLength=870 -->
+  <text x="962" y="620"
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+        font-size="41" font-weight="400"
+        fill="#4FC3F7" opacity="0.85"
+        textLength="870" lengthAdjust="spacing">MyAnimeList.net real time library syncing</text>
+
+</svg>

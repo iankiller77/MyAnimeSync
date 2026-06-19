@@ -5,6 +5,7 @@
         "description": "This is a longer description that can span more than one line and include details about your plugin.\n",
         "overview": "Synchronise watch status on myanimelist.",
         "owner": "iankiller77",
+        "imageUrl": "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png",
         "category": "General",
         "versions": [
             {

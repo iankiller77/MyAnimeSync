@@ -1,13 +1,13 @@
 ---
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
+imageUrl: "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png"
 version: "1.6.1.0"
 targetAbi: "10.11.11.0"
 framework: "net9.0"
 overview: "Synchronise watch status on myanimelist."
 description: >
   This is a longer description that can span more than one line and include details about your plugin.
-
 category: "General"
 owner: "iankiller77"
 artifacts:
