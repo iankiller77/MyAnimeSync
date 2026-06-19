@@ -1,4 +1,7 @@
 <h1 align="center">My Anime Sync</h1>
+<p>
+<img alt="Plugin Banner" src="https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png"/>
+</p>
 
 ## About the Plugin
 This is a simple plugin for Jellyfin to update watch status on <a src="https://myanimelist.net/">MyAnimeList.net</a><br/>
