@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Api.TVDB;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -243,13 +241,29 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return info;
         }
 
-        internal static async Task<bool> InternalUpdateAnimeList(string serie, int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        internal static async Task<bool> InternalUpdateAnimeList(UpdateEntry episode, bool useOriginalTitle, UserConfig userConfig, ILogger logger)
         {
             // Update tokens if needed before using the api.
             if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
             {
                 logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
             }
+
+            string serie = episode.Serie;
+
+            if (useOriginalTitle)
+            {
+                if (string.IsNullOrWhiteSpace(episode.OriginalSerieTitle))
+                {
+                    logger.LogError("The use of original serie title was requested but is not defined by jellyfin for serie: {Serie}", serie);
+                    return false;
+                }
+
+                serie = episode.OriginalSerieTitle;
+            }
+
+            int episodeNumber = episode.EpisodeNumber;
+            int seasonNumber = episode.SeasonNumber;
 
             AnimeData? info = null;
             await Task.Run(() =>
@@ -348,31 +362,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             bool success;
 
             string serie = episode.Serie;
-            bool fallbackSearch = false;
-
-            // Try to use the original serie name
-            if (userConfig.OriginalTitleSearch)
-            {
-                if (!string.IsNullOrWhiteSpace(episode.OriginalSerieTitle))
-                {
-                    serie = episode.OriginalSerieTitle;
-                    if (userConfig.OriginalTitleSearchFallback)
-                    {
-                        fallbackSearch = true;
-                    }
-                }
-            }
+            bool fallbackSearch = userConfig.OriginalTitleSearchFallback;
 
             int episodeNumber = episode.EpisodeNumber;
             int seasonNumber = episode.SeasonNumber;
 
             if (seasonNumber > 0)
             {
-                success = await InternalUpdateAnimeList(serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+                success = await InternalUpdateAnimeList(episode, userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 // Determine if the fallback to default search name applies
                 if (fallbackSearch && !success)
                 {
-                    success = await InternalUpdateAnimeList(episode.Serie, episodeNumber, seasonNumber, userConfig, logger).ConfigureAwait(true);
+                    success = await InternalUpdateAnimeList(episode, !userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 }
             }
             else
@@ -428,16 +429,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                         return;
                     }
 
-                    if (episode.IndexNumber == null)
-                    {
-                        _logger.LogError(
-                            "Could not retrieve episode number for : {AnimeName}",
-                            episode.SeriesName);
-                        return;
-                    }
+                    UpdateEntry? entry = UpdateEntry.GenerateEntryFromEpisode(episode, _logger);
 
-                    UpdateEntry entry = new UpdateEntry(episode.SeriesName, episode.Series.OriginalTitle ?? string.Empty, episode.IndexNumber.Value, episode.AiredSeasonNumber ?? 1);
-                    await UpdateAnimeList(entry, userConfig, _logger).ConfigureAwait(false);
+                    if (entry != null)
+                    {
+                        await UpdateAnimeList(entry, userConfig, _logger).ConfigureAwait(false);
+                    }
                 }
             }
         }

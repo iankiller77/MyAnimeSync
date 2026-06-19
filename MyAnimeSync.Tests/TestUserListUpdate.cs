@@ -25,14 +25,14 @@ public class TestUserListUpdate
 
         userConfig.UserToken = _accessToken;
 
-        UpdateEntry entry = new UpdateEntry("Demon Slayer", "Kimetsu no Yaiba", 8, 1);
+        UpdateEntry entry = new UpdateEntry("Demon Slayer", "Kimetsu no Yaiba", 8, 1, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
 
     // Test for generic anime tagged with the proper season.
     [Fact]
-    public async Task TestUpdateWithSeason()
+    public void TestUpdateWithSeason()
     {
         UserConfig userConfig = new UserConfig();
 
@@ -70,11 +70,14 @@ public class TestUserListUpdate
 
         userConfig.UserToken = _accessToken;
 
-        UpdateEntry entry = new UpdateEntry("Re:ZERO -Starting Life in Another World-", "Re:Zero kara Hajimeru Isekai Seikatsu", 2, 3);
+        UpdateEntry entry = new UpdateEntry("Re:ZERO -Starting Life in Another World-", "Re:Zero kara Hajimeru Isekai Seikatsu", 2, 3, null);
         int episodeNumber = 2;
         AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("Re:ZERO -Starting Life in Another World-", ref episodeNumber, 3, userConfig, _logger);
         Assert.NotNull(info);
         Assert.NotNull(info.ID);
         Assert.Equal(54857, info.ID);
     }
+
+    // TODO: Add test for fallback search!
+    // TODO: Add test for original title use.
 }
