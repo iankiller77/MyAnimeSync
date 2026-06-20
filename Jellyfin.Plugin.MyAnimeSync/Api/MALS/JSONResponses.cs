@@ -102,6 +102,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public int? EpisodeCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the start date of the anime season.
+        /// </summary>
+        [JsonPropertyName("start_date")]
+        public string? StartDate { get; set; }
+
+        /// <summary>
         /// Gets or sets the list of related animes.
         /// </summary>
         [JsonPropertyName("related_anime")]
