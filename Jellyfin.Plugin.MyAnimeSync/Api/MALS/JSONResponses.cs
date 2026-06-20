@@ -66,6 +66,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public string? Title { get; set; }
 
         /// <summary>
+        /// Gets or sets the media type.
+        /// </summary>
+        [JsonPropertyName("media_type")]
+        public string? MediaType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the start date.
+        /// </summary>
+        [JsonPropertyName("start_date")]
+        public string? StartDate { get; set; }
+
+        /// <summary>
         /// Gets or sets the alternative anime titles.
         /// </summary>
         [JsonPropertyName("alternative_titles")]
