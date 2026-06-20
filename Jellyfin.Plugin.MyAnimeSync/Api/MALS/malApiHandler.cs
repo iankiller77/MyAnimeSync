@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Authentication;
 using System.Text.Json;
@@ -139,7 +140,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             DateTime acquiredTokenDate = uConfig.TokenAcquireDateTime;
 
             // Only refresh if tokens are invalid or if the token is at least 7 days old.
-            if (DateTime.Now.AddMinutes(5) < expirationDateTime || (DateTime.Now - acquiredTokenDate).TotalDays < 7) { return true; }
+            if (expirationDateTime > DateTime.Now.AddMinutes(5) || (DateTime.Now - acquiredTokenDate).TotalDays < 7) { return true; }
 
             string clientID = uConfig.ClientID;
             string clientSecret = uConfig.ClientSecret;
@@ -175,10 +176,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <summary>
         /// Retrieve the anime id associated with a tittle.
         /// </summary>
-        /// <param name="animeName">The user config. <see cref="string"/>.</param>
-        /// <param name="uConfig">The user config. <see cref="UserConfig"/>.</param>
+        /// <param name="animeName">The user config.<see cref="string"/>.</param>
+        /// <param name="uConfig">The user config.<see cref="UserConfig"/>.</param>
+        /// <param name="expectedYear">The expected start date of the anime.<see cref="int"/>.</param>
+        /// <param name="expectedTypes">The expected type of anime.<see cref="string"/>.</param>
         /// <returns> The generated tokens. </returns>
-        public static async Task<int?> GetAnimeID(string animeName, UserConfig uConfig)
+        public static async Task<int?> GetAnimeID(string animeName, UserConfig uConfig, int? expectedYear = null, string[]? expectedTypes = null)
         {
             string token = uConfig.UserToken;
             bool nsfwCheck = uConfig.AllowNSFW;
@@ -194,7 +197,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             {
                 { "q", searchString },
                 { "limit", "25" },
-                { "fields", "alternative_titles" },
+                { "fields", "media_type,start_date,alternative_titles" },
                 { "nsfw", nsfwCheck.ToString() }
             };
 
@@ -255,6 +258,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
                 // If we did not match all the words, return null.
                 if (mostWordMatched < words.Length) { return null; }
+            }
+
+            if (matchingEntries.Count > 1)
+            {
+                if (expectedYear != null)
+                {
+                    matchingEntries = matchingEntries.FindAll(element =>
+                    {
+                        var startDate = element.SearchEntry?.StartDate;
+                        if (startDate == null) { return false; }
+                        return DateTime.ParseExact(startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture).Year == expectedYear;
+                    });
+                }
+
+                if (expectedTypes != null)
+                {
+                    matchingEntries = matchingEntries.FindAll(element => expectedTypes.Contains(element.SearchEntry?.MediaType));
+                }
             }
 
             AnimeSearchEntry? bestMatchingNode = matchingEntries.OrderBy(element => element.SearchEntry?.Title?.Length).FirstOrDefault()?.SearchEntry;

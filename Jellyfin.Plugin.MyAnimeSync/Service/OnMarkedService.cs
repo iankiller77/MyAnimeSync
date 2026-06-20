@@ -152,9 +152,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger)
+        internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger, int? expectedYear = null)
         {
-            int? id = MalApiHandler.GetAnimeID(serie, userConfig).Result;
+            // Try to validate the date on first anime fetched, also it should always be a tv episode or movie.
+            int? id = MalApiHandler.GetAnimeID(serie, userConfig, expectedYear, [MediaType.SeasonalAnime, MediaType.Movie]).Result;
             if (id == null)
             {
                 logger.LogError(
@@ -268,7 +269,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             AnimeData? info = null;
             await Task.Run(() =>
             {
-                info = InternalRetrieveAnimeData(serie, ref episodeNumber, seasonNumber, userConfig, logger);
+                info = InternalRetrieveAnimeData(serie, ref episodeNumber, seasonNumber, userConfig, logger, episode.StartYear);
             }).ConfigureAwait(true);
 
             if (info == null)
