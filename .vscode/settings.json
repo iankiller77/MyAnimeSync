@@ -12,4 +12,5 @@
     "jellyfinDataDir" : "${env:LOCALAPPDATA}/jellyfin",
     // The name of the plugin
     "pluginName" : "Jellyfin.Plugin.MyAnimeSync",
+    "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/.runsettings"
 }

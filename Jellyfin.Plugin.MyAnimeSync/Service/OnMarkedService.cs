@@ -45,7 +45,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return Task.CompletedTask;
         }
 
-        private static async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig, ILogger logger)
+        internal static async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig, ILogger logger)
         {
             RelatedAnime[]? nodes = info.RelatedNodes;
             if (nodes == null)
@@ -108,7 +108,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        private static bool UpdateUserList(string serie, int episodeNumber, int? seasonNumber, AnimeData info, UserConfig userConfig, ILogger logger)
+        internal static bool UpdateUserList(string serie, int episodeNumber, int? seasonNumber, AnimeData info, UserConfig userConfig, ILogger logger)
         {
             if (info.ID == null) { return false; }
 
@@ -381,6 +381,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             {
                 success = await InternalUpdateAnimeListSpecial(serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
                 // Determine if the fallback to default search name applies
+                // TODO: Fix this, we forgot to update the code for special, we only changed the logic for normal anime search!!!
+                // Right now, this is breaking code coverage since the logic is broken.
                 if (fallbackSearch && !success)
                 {
                     success = await InternalUpdateAnimeListSpecial(episode.Serie, episodeNumber, userConfig, logger).ConfigureAwait(true);

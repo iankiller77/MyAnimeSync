@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Exclude>
+                <ModulePath>.*\\MyAnimeSync\.Tests\.dll</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Functions>
+              <Exclude>
+                <!-- Skip code coverage for tests that require working jellyfin instance -->
+                <Function>.*OnMarkedService.*OnUserDataMarkedPlayed.*</Function>
+                <Function>.*OnMarkedService.*StartAsync.*</Function>
+                <Function>.*OnMarkedService.*Dispose.*</Function>
+                <Function>.*OnMarkedService.*StopAsync.*</Function>
+                <Function>.*OnMarkedService\.OnMarkedService.*</Function>
+                <Function>.*MalApiHandler.*UpdateTokensInConfig.*</Function>
+                <Function>.*MalApiHandler.*GetNewTokens.*</Function>
+                <Function>.*MalApiHandler.*RefreshTokens.*</Function>
+                <Function>.*TVDBApiHandler.*Token.*</Function>
+                <Function>.*TVDBApiHandler.*UpdateTVDBToken.*</Function>
+                <!-- Skip code coverage for basic constructors -->
+                <Function>.*UserAnimeInfo\.UserAnimeInfo.*</Function>
+                <Function>.*UpdateEntry\.UpdateEntry.*</Function>
+                <Function>.*TokenResponseStruct\.TokenResponseStruct.*</Function>
+                <!-- Skip code coverage for code that should not be executed in tests -->
+                <Function>.*HttpRequestHelper.*ThrottleApiRequests.*</Function>
+              </Exclude>
+            </Functions>
+            <Sources>
+              <Exclude>
+                <Source>.*\\Endpoints\.cs</Source>
+                <!-- Skip code coverage for tests that require working jellyfin instance -->
+                <Source>.*\\Plugin\.cs</Source>
+                <Source>.*\\PluginServiceRegistrator\.cs</Source>
+                <Source>.*\\Configuration\\.*</Source>
+                <Source>.*\\Tasks\\.*</Source>
+              </Exclude>
+            </Sources>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

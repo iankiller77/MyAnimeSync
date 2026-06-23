@@ -376,6 +376,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             return jsonData != null;
         }
 
+        // Maybe we will find a use for this eventualy, but for now, this is simply used for tests.
+        internal static async Task<bool> DeleteAnimeFromUserList(int animeID, UserConfig uConfig)
+        {
+            string token = uConfig.UserToken;
+            bool throttling = uConfig.Throttle;
+
+            string url = AnimeUrl + "/" + animeID + "/my_list_status";
+            JsonNode? jsonData = await HttpRequestHelper.SendDeleteRequest(url, token, throttling).ConfigureAwait(true);
+            return jsonData != null;
+        }
+
         internal sealed class TokenResponseStruct
         {
             public TokenResponseStruct()
