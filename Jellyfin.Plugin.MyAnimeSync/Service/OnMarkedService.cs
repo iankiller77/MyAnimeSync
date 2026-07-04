@@ -280,8 +280,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return UpdateUserList(serie, episodeNumber, seasonNumber, info, userConfig, logger);
         }
 
-        internal static async Task<bool> InternalUpdateAnimeListSpecial(string serie, int episodeNumber, UserConfig userConfig, ILogger logger)
+        internal static async Task<bool> InternalUpdateAnimeListSpecial(UpdateEntry episode, int episodeNumber, bool useOriginalTitle, UserConfig userConfig, ILogger logger)
         {
+            string serie = episode.Serie;
+
             if (!userConfig.AllowSpecials)
             {
                 logger.LogWarning("Updating special episodes is disabled, skipping the update for {Serie} special #{EpisodeNumber}!", serie, episodeNumber);
@@ -291,6 +293,17 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             if (!await MalApiHandler.RefreshTokens(userConfig).ConfigureAwait(true))
             {
                 logger.LogError("Could not update token for user: {UserID}", userConfig.Id);
+            }
+
+            if (useOriginalTitle)
+            {
+                if (string.IsNullOrWhiteSpace(episode.OriginalSerieTitle))
+                {
+                    logger.LogError("The use of original serie title was requested but is not defined by jellyfin for serie: {Serie}", serie);
+                    return false;
+                }
+
+                serie = episode.OriginalSerieTitle;
             }
 
             int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
@@ -379,11 +392,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
             else
             {
-                success = await InternalUpdateAnimeListSpecial(serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
+                success = await InternalUpdateAnimeListSpecial(episode, episodeNumber, userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 // Determine if the fallback to default search name applies
                 if (fallbackSearch && !success)
                 {
-                    success = await InternalUpdateAnimeListSpecial(episode.Serie, episodeNumber, userConfig, logger).ConfigureAwait(true);
+                    success = await InternalUpdateAnimeListSpecial(episode, episodeNumber, !userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 }
             }
 
