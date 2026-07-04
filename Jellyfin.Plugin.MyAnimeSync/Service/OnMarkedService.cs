@@ -280,9 +280,10 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return UpdateUserList(serie, episodeNumber, seasonNumber, info, userConfig, logger);
         }
 
-        internal static async Task<bool> InternalUpdateAnimeListSpecial(UpdateEntry episode, int episodeNumber, bool useOriginalTitle, UserConfig userConfig, ILogger logger)
+        internal static async Task<bool> InternalUpdateAnimeListSpecial(UpdateEntry episode, bool useOriginalTitle, UserConfig userConfig, ILogger logger)
         {
             string serie = episode.Serie;
+            int episodeNumber = episode.EpisodeNumber;
 
             if (!userConfig.AllowSpecials)
             {
@@ -378,7 +379,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             string serie = episode.Serie;
             bool fallbackSearch = userConfig.OriginalTitleSearchFallback;
 
-            int episodeNumber = episode.EpisodeNumber;
             int seasonNumber = episode.SeasonNumber;
 
             if (seasonNumber > 0)
@@ -392,11 +392,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
             else
             {
-                success = await InternalUpdateAnimeListSpecial(episode, episodeNumber, userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
+                success = await InternalUpdateAnimeListSpecial(episode, userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 // Determine if the fallback to default search name applies
                 if (fallbackSearch && !success)
                 {
-                    success = await InternalUpdateAnimeListSpecial(episode, episodeNumber, !userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
+                    success = await InternalUpdateAnimeListSpecial(episode, !userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 }
             }
 
