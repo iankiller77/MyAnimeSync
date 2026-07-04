@@ -159,6 +159,9 @@ public class TestUserListUpdateFail : Base
 }
 
 // Test for special anime
+// TODO: For now, I only check for the japanese version of the anime, more test are required to know how well it work with english titles
+//       But it seems pretty bad right now. Maybe change this eventually, should we force using the japanese title?
+//       Might need to properly implement the search behaviour for tvdb even if japanese title seems to be extremely accurate so far. (In cases where it is not available)
 public class BasicUpdateForSpecial : Base
 {
     [Fact]
@@ -167,11 +170,12 @@ public class BasicUpdateForSpecial : Base
         UserConfig userConfig = new UserConfig();
         userConfig.UserToken = _accessToken;
 
-        UpdateEntry entry = new UpdateEntry("Overlord", "", 1, 0, 2015);
+        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
 
         userConfig.AllowSpecials = true;
+        userConfig.OriginalTitleSearch = true;
         result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
