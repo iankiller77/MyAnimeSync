@@ -45,7 +45,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             return Task.CompletedTask;
         }
 
-        private static async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig, ILogger logger)
+        internal static async Task<AnimeData?> GetAnimeSequel(AnimeData info, UserConfig userConfig, ILogger logger)
         {
             RelatedAnime[]? nodes = info.RelatedNodes;
             if (nodes == null)
@@ -108,7 +108,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        private static bool UpdateUserList(string serie, int episodeNumber, int? seasonNumber, AnimeData info, UserConfig userConfig, ILogger logger)
+        internal static bool UpdateUserList(string serie, int episodeNumber, int? seasonNumber, AnimeData info, UserConfig userConfig, ILogger logger)
         {
             if (info.ID == null) { return false; }
 

@@ -120,7 +120,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.HttpHelper
 
             try
             {
-                if (!throttling)
+                if (throttling)
                 {
                     ThrottleApiRequests();
                 }
@@ -196,6 +196,39 @@ namespace Jellyfin.Plugin.MyAnimeSync.HttpHelper
                 }
 
                 var response = await httpClient.PatchAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Authenticated patch request returned an error response.");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+
+                return jsonData;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Send an Encoded Http Delete Request.
+        /// </summary>
+        /// <param name="url">The url for the http request.<see cref="string"/>.</param>
+        /// <param name="token">The token used for authentication.<see cref="string"/>.</param>
+        /// <param name="throttling">A flag to determine if we should throttle requests.<see cref="bool"/>.</param>
+        /// <returns>The json returned by the http request.</returns>
+        public static async Task<JsonNode?> SendDeleteRequest(string url, string token, bool throttling)
+        {
+            HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            try
+            {
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.DeleteAsync(url).ConfigureAwait(true);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new AuthenticationException("Authenticated patch request returned an error response.");

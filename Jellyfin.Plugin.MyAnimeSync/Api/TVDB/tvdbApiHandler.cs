@@ -28,15 +28,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                     if (token == null)
                     {
                         string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
-                        if (Plugin.Instance == null || newToken == null)
+                        if (newToken == null)
                         {
                             return null;
                         }
 
                         newToken = newToken.Replace("\n", string.Empty, StringComparison.CurrentCultureIgnoreCase);
 
-                        Plugin.Instance.Configuration.TVDBToken = newToken;
-                        Plugin.Instance.SaveConfiguration();
+                        if (Plugin.Instance != null)
+                        {
+                            Plugin.Instance.Configuration.TVDBToken = newToken;
+                            Plugin.Instance.SaveConfiguration();
+                        }
 
                         return newToken;
                     }
