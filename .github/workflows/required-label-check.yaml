@@ -1,0 +1,36 @@
+name: Require Label
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for exactly one required label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const allowedLabels = ['major-feature', 'feature', 'bugfix', 'skip-changelog'];
+
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            const matched = prLabels.filter(label => allowedLabels.includes(label));
+
+            if (matched.length === 0) {
+              core.setFailed(
+                `This pull request must have exactly one of the following labels: ${allowedLabels.join(', ')}. ` +
+                `Current labels: ${prLabels.length ? prLabels.join(', ') : '(none)'}`
+              );
+            } else if (matched.length > 1) {
+              core.setFailed(
+                `This pull request must have only ONE of: ${allowedLabels.join(', ')}. ` +
+                `Found multiple: ${matched.join(', ')}`
+              );
+            } else {
+              console.log(`Required label found: ${matched[0]}`);
+            }
