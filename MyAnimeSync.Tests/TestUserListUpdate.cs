@@ -203,3 +203,4 @@ public class FallbackSearchForSpecial : Base
 }
 
 // TODO: Unit test for special that validate that we retrieve the proper anime ID!
+// TODO: Integration test with Selenium for EndPoints, the config page and overall plugin. (should technically be possible to reach 100% code cover)
