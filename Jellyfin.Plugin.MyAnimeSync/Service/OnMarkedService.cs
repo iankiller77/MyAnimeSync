@@ -394,8 +394,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             {
                 success = await InternalUpdateAnimeListSpecial(episode, userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
                 // Determine if the fallback to default search name applies
-                // TODO: Fix this, we forgot to update the code for special, we only changed the logic for normal anime search!!!
-                // Right now, this is breaking code coverage since the logic is broken.
                 if (fallbackSearch && !success)
                 {
                     success = await InternalUpdateAnimeListSpecial(episode, !userConfig.OriginalTitleSearch, userConfig, logger).ConfigureAwait(true);
