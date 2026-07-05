@@ -268,7 +268,14 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                     {
                         var startDate = element.SearchEntry?.StartDate;
                         if (startDate == null) { return false; }
-                        return DateTime.ParseExact(startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture).Year == expectedYear;
+
+                        string[] formats = ["yyyy-MM-dd", "yyyy"];
+                        if (!DateTime.TryParseExact(startDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                        {
+                            return false;
+                        }
+
+                        return parsedDate.Year == expectedYear;
                     });
                 }
 
