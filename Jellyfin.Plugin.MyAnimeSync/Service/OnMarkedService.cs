@@ -155,7 +155,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger, int? expectedYear = null)
         {
             // Try to validate the date on first anime fetched, also it should always be a tv episode or movie.
-            int? id = MalApiHandler.GetAnimeID(serie, userConfig, expectedYear, [MediaType.SeasonalAnime, MediaType.Movie]).Result;
+            int? id = MalApiHandler.GetAnimeID(serie, logger, userConfig, expectedYear, [MediaType.SeasonalAnime, MediaType.Movie]).Result;
             if (id == null)
             {
                 logger.LogError(
@@ -333,7 +333,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
             AnimeData? info = null;
 
-            int? id = await MalApiHandler.GetAnimeID(episodeName, userConfig).ConfigureAwait(true);
+            int? id = await MalApiHandler.GetAnimeID(episodeName, logger, userConfig).ConfigureAwait(true);
             if (id != null)
             {
                 info = await MalApiHandler.GetAnimeInfo(id.Value, userConfig).ConfigureAwait(true);
@@ -342,7 +342,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             if (info == null || info.ID == null || info.EpisodeCount == null || info.MediaType == null || info.MediaType == MediaType.SeasonalAnime)
             {
                 episodeName = episodeName.Split('-')[0].Trim();
-                int? newID = await MalApiHandler.GetAnimeID(episodeName, userConfig).ConfigureAwait(true);
+                int? newID = await MalApiHandler.GetAnimeID(episodeName, logger, userConfig).ConfigureAwait(true);
                 if (newID == null)
                 {
                     logger.LogError(
