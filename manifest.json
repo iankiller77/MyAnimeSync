@@ -11,10 +11,10 @@
             {
                 "version": "1.6.2.0",
                 "changelog": "### :tada: New features and improvements\n- Refactor/improve_code_coverage (#60) @iankiller77\n- feature/consider_serie_production_year_and_type_for_search (#57) @iankiller77\n- refactor/streamlined_update_entry_generation_and_use_for_episode (#56) @iankiller77\n- feature/image_for_plugin_page (#55) @iankiller77\n### :bug: Bug Fixes\n- bugfix/episode_mismatch_on_ONA_in_between_seasons (#62) @iankiller77\n- bugfix/fix_special_episode_issue_introduced_in_#56 (#59) @iankiller77",
-                "targetAbi": "12.0.0.0",
+                "targetAbi": "10.11.11.0",
                 "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.6.2.0/myanimesync_1.6.2.0.zip",
-                "checksum": "d94c914ceb4b16eefe703c542aa4e11b",
-                "timestamp": "2026-07-05T01:47:36Z"
+                "checksum": "87a37c884ef43def34b6269658e2b1d4",
+                "timestamp": "2026-07-05T05:50:29Z"
             },
             {
                 "version": "1.6.1.0",
