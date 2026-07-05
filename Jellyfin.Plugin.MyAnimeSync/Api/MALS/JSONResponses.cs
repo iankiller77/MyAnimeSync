@@ -34,6 +34,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 
         /// <summary>Anime movie.</summary>
         public const string Movie = "movie";
+
+        /// <summary>Original Video Animation.</summary>
+        public const string OVA = "ova";
     }
 
     /// <summary>

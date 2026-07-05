@@ -102,7 +102,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            JsonNode? info = await MalApiHandler.GetAnimeID("Jujutsu Kaisen", uConfig).ConfigureAwait(true);
+            JsonNode? info = await MalApiHandler.GetAnimeID("Jujutsu Kaisen", _logger, uConfig).ConfigureAwait(true);
             if (info == null)
             {
                 _logger.LogError("Could not complete api request while trying to validate user: {UserID}", guid);

@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.HttpHelper;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
 {
@@ -177,11 +178,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// Retrieve the anime id associated with a tittle.
         /// </summary>
         /// <param name="animeName">The user config.<see cref="string"/>.</param>
+        /// <param name="logger">The logger.<see cref="ILogger"/>.</param>
         /// <param name="uConfig">The user config.<see cref="UserConfig"/>.</param>
         /// <param name="expectedYear">The expected start date of the anime.<see cref="int"/>.</param>
         /// <param name="expectedTypes">The expected type of anime.<see cref="string"/>.</param>
         /// <returns> The generated tokens. </returns>
-        public static async Task<int?> GetAnimeID(string animeName, UserConfig uConfig, int? expectedYear = null, string[]? expectedTypes = null)
+        public static async Task<int?> GetAnimeID(string animeName, ILogger logger, UserConfig uConfig, int? expectedYear = null, string[]? expectedTypes = null)
         {
             string token = uConfig.UserToken;
             bool nsfwCheck = uConfig.AllowNSFW;
@@ -268,7 +270,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                     {
                         var startDate = element.SearchEntry?.StartDate;
                         if (startDate == null) { return false; }
-                        return DateTime.ParseExact(startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture).Year == expectedYear;
+
+                        string[] formats = ["yyyy-MM-dd", "yyyy"];
+                        if (!DateTime.TryParseExact(startDate, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                        {
+                            logger.LogError("Could not parse date properly for anime: {Anime}", element.SearchEntry?.Title);
+                            return false;
+                        }
+
+                        return parsedDate.Year == expectedYear;
                     });
                 }
 
