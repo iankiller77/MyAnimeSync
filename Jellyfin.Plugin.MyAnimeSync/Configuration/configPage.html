@@ -896,6 +896,12 @@
                                     t.style.cssText = 'position:fixed;top:' + (e.clientY - 10) + 'px;left:' + (e.clientX + 12) + 'px;background:#323232;color:#fff;padding:10px 20px;border-radius:6px;font-size:14px;z-index:9999;opacity:1;transition:opacity 0.5s ease;';
                                     document.body.appendChild(t);
                                     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 2000);
+                                }).catch(() => {
+                                    // If we throw an error in the event copy function, delete our overlay
+                                    // This will let the user manually select the url and copy it if something goes wrong
+                                    overlay.remove();
+                                    urlLabel.focus();
+                                    urlLabel.select();
                                 });
                             });
                         }
