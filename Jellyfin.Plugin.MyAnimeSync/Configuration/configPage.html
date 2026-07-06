@@ -890,12 +890,18 @@
                             overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;';
                             wrapper.appendChild(overlay);
                             overlay.addEventListener("click", function(e) {
-                                navigator.clipboard.writeText(urlLabel.value).then(() => {
+                                MyAnimeSyncConfig.copyToClipboard(urlLabel.value).then(() => {
                                     var t = document.createElement('div');
                                     t.textContent = 'Link copied to clipboard!';
                                     t.style.cssText = 'position:fixed;top:' + (e.clientY - 10) + 'px;left:' + (e.clientX + 12) + 'px;background:#323232;color:#fff;padding:10px 20px;border-radius:6px;font-size:14px;z-index:9999;opacity:1;transition:opacity 0.5s ease;';
                                     document.body.appendChild(t);
                                     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 2000);
+                                }).catch(() => {
+                                    // If we throw an error in the event copy function, delete our overlay
+                                    // This will let the user manually select the url and copy it if something goes wrong
+                                    overlay.remove();
+                                    urlLabel.focus();
+                                    urlLabel.select();
                                 });
                             });
                         }
@@ -905,6 +911,32 @@
                 {
                     window.alert("Please populate client id, client secret and jellyfin url before trying to authenticate.")
                 }
+            },
+
+            copyToClipboard: function (text) {
+                // navigator.clipboard is only available in secure contexts (HTTPS/localhost).
+                // Jellyfin is commonly reached over plain HTTP on a LAN, so fall back to execCommand there.
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
+                return new Promise(function (resolve, reject) {
+                    console.log("Insecure context detected, falling back to legacy clipboard copy")
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    // Kept within the viewport (not off-screen) and hidden via opacity so
+                    // focusing it can't trigger the browser to auto-scroll the page.
+                    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:none;opacity:0;pointer-events:none;';
+                    document.body.appendChild(ta);
+                    ta.focus({ preventScroll: true });
+                    ta.select();
+                    try {
+                        document.execCommand('copy') ? resolve() : reject();
+                    } catch (err) {
+                        reject(err);
+                    } finally {
+                        document.body.removeChild(ta);
+                    }
+                });
             },
 
             testConfig: async function()
