@@ -191,7 +191,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
 
                 // Ignore anime movie and OVA for season offset.
-                if (info.MediaType == MediaType.Movie || info.MediaType == MediaType.OVA)
+                if (info.MediaType == MediaType.Movie || info.MediaType == MediaType.OVA || info.MediaType == MediaType.TVSpecial)
                 {
                     continue;
                 }
