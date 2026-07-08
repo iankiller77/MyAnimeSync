@@ -29,14 +29,20 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
     /// </summary>
     public static class MediaType
     {
-        /// <summary>Seasonal Anime.</summary>
-        public const string SeasonalAnime = "tv";
-
         /// <summary>Anime movie.</summary>
         public const string Movie = "movie";
 
         /// <summary>Original Video Animation.</summary>
         public const string OVA = "ova";
+
+        /// <summary>Seasonal Anime.</summary>
+        public const string SeasonalAnime = "tv";
+
+        /// <summary>Special.</summary>
+        public const string Special = "special";
+
+        /// <summary>TV Special.</summary>
+        public const string TVSpecial = "tv_special";
     }
 
     /// <summary>

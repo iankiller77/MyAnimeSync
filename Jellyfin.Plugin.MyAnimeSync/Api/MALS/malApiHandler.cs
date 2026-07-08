@@ -332,7 +332,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
             var values = new Dictionary<string, string?>()
             {
                 { "fields", "list_status" },
-                { "limit", "500" }
+                { "limit", "500" },
+                { "nsfw", "true" }
             };
 
             JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(UserAnimeListUrl, values, token, throttling).ConfigureAwait(true);
