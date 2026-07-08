@@ -123,6 +123,24 @@ public class TestUpdateWithMovieSequel : Base
     }
 }
 
+
+public class TestUpdateWithTvSpecial() : Base
+{
+    [Fact]
+    public void UpdateWithTvSpecial()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+        userConfig.AllowNSFW = true;
+
+        int episodeNumber = 2;
+        AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("Mushoku Tensei: Jobless Reincarnation", ref episodeNumber, 2, userConfig, _logger);
+        Assert.NotNull(info);
+        Assert.NotNull(info.ID);
+        Assert.Equal(51179, info.ID);
+    }
+}
+
 // Test for season with parts
 public class TestUpdateWithSeasonParts : Base
 {
