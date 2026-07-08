@@ -2,7 +2,7 @@
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
 imageUrl: "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png"
-version: "1.6.2.1"
+version: "1.6.2.2"
 targetAbi: "10.11.11.0"
 framework: "net9.0"
 overview: "Synchronise watch status on myanimelist."
@@ -15,4 +15,5 @@ artifacts:
   - "Jellyfin.Plugin.MyAnimeSync.dll"
 changelog: |-
   ### :bug: Bug Fixes
-  - Bugfix/unable to copy api url from insecure http context (#66) @iankiller77
+  - Bugfix/wrong season identification with tv special between seasons (#70) @iankiller77
+  - bugfix/missing_serie_season_from_user_list_when_season_marked_as_nsfw (#68) @iankiller77
