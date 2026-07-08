@@ -9,6 +9,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.6.2.2",
+                "changelog": "### :bug: Bug Fixes\n- Bugfix/wrong season identification with tv special between seasons (#70) @iankiller77\n- bugfix/missing_serie_season_from_user_list_when_season_marked_as_nsfw (#68) @iankiller77",
+                "targetAbi": "10.11.11.0",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.6.2.2/myanimesync_1.6.2.2.zip",
+                "checksum": "5806acad17201afc201b4f511d24abcc",
+                "timestamp": "2026-07-08T02:58:17Z"
+            },
+            {
                 "version": "1.6.2.1",
                 "changelog": "### :bug: Bug Fixes\n- Bugfix/unable to copy api url from insecure http context (#66) @iankiller77",
                 "targetAbi": "10.11.11.0",
