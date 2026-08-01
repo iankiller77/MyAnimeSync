@@ -12,62 +12,42 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
     /// </summary>
     public static class TVDBApiHandler
     {
+        private const string ApiKey = "4efaf949-f182-453a-ae02-cbb225f65ab6";
         private const string ApiBaseUrl = "https://api4.thetvdb.com/v4/";
-        private const string TokenURL = "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/token.txt";
+        private const string LoginUrl = ApiBaseUrl + "login";
         private const string SearchUrl = ApiBaseUrl + "search";
         private static readonly object _lock = new object();
 
         private static string? Token
         {
-            // TODO: Create a task to sync token with github. (2x a month)
             get
             {
                 lock (_lock)
                 {
                     string? token = Plugin.Instance?.Configuration.TVDBToken;
-                    if (token == null)
+                    DateTime? tokenGenerationDate = Plugin.Instance?.Configuration.TVDBTokenGenerationDate;
+                    if (token == null || tokenGenerationDate == null || DateTime.Today.Subtract(tokenGenerationDate.Value).Days >= 20)
                     {
-                        string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
-                        if (newToken == null)
+                        var values = new Dictionary<string, string>()
+                        {
+                            { "apikey", ApiKey },
+                            { "pin", string.Empty }
+                        };
+
+                        LoginNode? jsonData = JsonSerializer.Deserialize<LoginNode>(HttpRequestHelper.SendJsonPostRequest(LoginUrl, values, false).Result);
+                        if (Plugin.Instance == null || jsonData == null || jsonData.Data == null || jsonData.Data.Token == null)
                         {
                             return null;
                         }
 
-                        newToken = newToken.Replace("\n", string.Empty, StringComparison.CurrentCultureIgnoreCase);
-
-                        if (Plugin.Instance != null)
-                        {
-                            Plugin.Instance.Configuration.TVDBToken = newToken;
-                            Plugin.Instance.SaveConfiguration();
-                        }
-
-                        return newToken;
+                        token = jsonData.Data.Token;
+                        Plugin.Instance.Configuration.TVDBToken = token;
+                        Plugin.Instance.Configuration.TVDBTokenGenerationDate = DateTime.Today;
+                        Plugin.Instance.SaveConfiguration();
                     }
 
                     return token;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Force update the global token used for TVDB.
-        /// </summary>
-        /// <returns>The information for the specified episode.</returns>
-        public static bool UpdateTVDBToken()
-        {
-            lock (_lock)
-            {
-                string? newToken = HttpRequestHelper.SendGetRequest(TokenURL, false).Result;
-                if (Plugin.Instance == null || newToken == null)
-                {
-                    return false;
-                }
-
-                newToken = newToken.Replace("\n", string.Empty, StringComparison.CurrentCultureIgnoreCase);
-
-                Plugin.Instance.Configuration.TVDBToken = newToken;
-                Plugin.Instance.SaveConfiguration();
-                return true;
             }
         }
 
