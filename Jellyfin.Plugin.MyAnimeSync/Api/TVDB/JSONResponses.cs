@@ -29,6 +29,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         /// <summary>
         /// Gets or sets the token.
         /// </summary>
+        [JsonPropertyName("token")]
         public string? Token { get; set; }
     }
 

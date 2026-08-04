@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Authentication;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -80,6 +81,43 @@ namespace Jellyfin.Plugin.MyAnimeSync.HttpHelper
         {
             HttpClient httpClient = new HttpClient();
             var content = new FormUrlEncodedContent(values);
+
+            try
+            {
+                if (throttling)
+                {
+                    ThrottleApiRequests();
+                }
+
+                var response = await httpClient.PostAsync(url, content).ConfigureAwait(true);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new AuthenticationException("Could not retrieve provider token");
+                }
+
+                StreamReader reader = new StreamReader(await response.Content.ReadAsStreamAsync().ConfigureAwait(true));
+                JsonNode? jsonData = JsonObject.Parse(await reader.ReadToEndAsync().ConfigureAwait(true));
+                if (jsonData == null)
+                {
+                    throw new AuthenticationException("Could not retrieve token from request.");
+                }
+
+                return jsonData;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Send a Json Http Post Request.
+        /// </summary>
+        /// <param name="url">The url for the http request.<see cref="string"/>.</param>
+        /// <param name="values">A dictionary of values for the request.<see cref="Dictionary{TKey, TValue}"/>.</param>
+        /// <param name="throttling">A flag to determine if we should throttle requests.<see cref="bool"/>.</param>
+        /// <returns>The json returned by the http request.</returns>
+        public static async Task<JsonNode?> SendJsonPostRequest(string url, Dictionary<string, string> values, bool throttling)
+        {
+            HttpClient httpClient = new HttpClient();
+            var content = JsonContent.Create(values);
 
             try
             {

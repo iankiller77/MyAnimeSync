@@ -29,6 +29,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public string? TVDBToken { get; set; }
 
         /// <summary>
+        /// Gets or sets the generation date of the TVDB token.
+        /// </summary>
+        public DateTime? TVDBTokenGenerationDate { get; set; }
+
+        /// <summary>
         /// Gets or sets the list of user configs.
         /// </summary>
         public UserConfig[] UserConfigs { get; set; }

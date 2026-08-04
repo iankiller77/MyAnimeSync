@@ -4,7 +4,7 @@ using Jellyfin.Plugin.MyAnimeSync.Api.TVDB;
 namespace MyAnimeSync.Tests.Mocked;
 
 // These tests cover the null-guard and happy-path logic inside TVDBApiHandler.
-// Token retrieval (SendGetRequest) and the authenticated API call
+// Token retrieval (SendJsonPostRequest) and the authenticated API call
 // (SendAuthenticatedGetRequest) are both patched via Harmony.
 [Collection("SerialTests")]
 public class TestNullAndErrorCasesTVDB
@@ -15,8 +15,8 @@ public class TestNullAndErrorCasesTVDB
     public async Task TVDBApiHandler_GetSerieID_TokenNull()
     {
         var harmony = HarmonyMocks.CreateHarmony();
-        HarmonyMocks.HttpGetResponse = null;
-        HarmonyMocks.AddHttpGetRequestPatch(harmony);
+        HarmonyMocks.JsonPostResponse = null;
+        HarmonyMocks.AddJsonPostRequestPatch(harmony);
         try
         {
             Assert.Null(await TVDBApiHandler.GetSerieID("Test"));
@@ -28,9 +28,9 @@ public class TestNullAndErrorCasesTVDB
     public async Task TVDBApiHandler_GetSerieID_NullResponse()
     {
         var harmony = HarmonyMocks.CreateHarmony();
-        HarmonyMocks.HttpGetResponse = "valid-token";
+        HarmonyMocks.JsonPostResponse = JsonNode.Parse("""{"status":"success","data":{"token":"valid-token"}}""");
         HarmonyMocks.AuthenticatedGetResponse = null;
-        HarmonyMocks.AddHttpGetRequestPatch(harmony);
+        HarmonyMocks.AddJsonPostRequestPatch(harmony);
         HarmonyMocks.AddAuthenticatedGetRequestPatch(harmony);
         try
         {
@@ -43,9 +43,9 @@ public class TestNullAndErrorCasesTVDB
     public async Task TVDBApiHandler_GetSerieID_NullId()
     {
         var harmony = HarmonyMocks.CreateHarmony();
-        HarmonyMocks.HttpGetResponse = "valid-token";
+        HarmonyMocks.JsonPostResponse = JsonNode.Parse("""{"status":"success","data":{"token":"valid-token"}}""");
         HarmonyMocks.AuthenticatedGetResponse = JsonNode.Parse("""{"status":"success","data":[{"id":null,"name":"Test"}]}""");
-        HarmonyMocks.AddHttpGetRequestPatch(harmony);
+        HarmonyMocks.AddJsonPostRequestPatch(harmony);
         HarmonyMocks.AddAuthenticatedGetRequestPatch(harmony);
         try
         {
@@ -60,8 +60,8 @@ public class TestNullAndErrorCasesTVDB
     public async Task TVDBApiHandler_GetEpisodesData_TokenNull()
     {
         var harmony = HarmonyMocks.CreateHarmony();
-        HarmonyMocks.HttpGetResponse = null;
-        HarmonyMocks.AddHttpGetRequestPatch(harmony);
+        HarmonyMocks.JsonPostResponse = null;
+        HarmonyMocks.AddJsonPostRequestPatch(harmony);
         try
         {
             Assert.Null(await TVDBApiHandler.GetEpisodesData(1, 1));
@@ -73,9 +73,9 @@ public class TestNullAndErrorCasesTVDB
     public async Task TVDBApiHandler_GetEpisodesData_NullResponse()
     {
         var harmony = HarmonyMocks.CreateHarmony();
-        HarmonyMocks.HttpGetResponse = "valid-token";
+        HarmonyMocks.JsonPostResponse = JsonNode.Parse("""{"status":"success","data":{"token":"valid-token"}}""");
         HarmonyMocks.AuthenticatedGetResponse = null;
-        HarmonyMocks.AddHttpGetRequestPatch(harmony);
+        HarmonyMocks.AddJsonPostRequestPatch(harmony);
         HarmonyMocks.AddAuthenticatedGetRequestPatch(harmony);
         try
         {
