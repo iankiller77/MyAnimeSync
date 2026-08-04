@@ -18,7 +18,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             OriginalSerieTitle = string.Empty;
             EpisodeNumber = 0;
             SeasonNumber = 0;
-            TVDBEpisodeID = string.Empty;
             RetryCount = 0;
         }
 

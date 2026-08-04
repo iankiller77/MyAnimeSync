@@ -95,7 +95,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         /// <param name="serieID">TVDB ID for the serie.<see cref="string"/>.</param>
         /// <param name="season">Season number for the episode.<see cref="int"/>.</param>
         /// <returns>A list of all the episodes associated with the specified season.</returns>
-        public static async Task<EpisodeData[]?> GetSerieEpisodes(int serieID, int season)
+        public static async Task<EpisodeData[]?> GetSeasonEpisodes(int serieID, int season)
         {
             var values = new Dictionary<string, string?>()
             {

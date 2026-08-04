@@ -69,7 +69,7 @@ internal static class HarmonyMocks
         return false;
     }
 
-    private static bool PatchGetEpisodesData(ref Task<EpisodeData[]?> __result)
+    private static bool PatchGetSeasonEpisodes(ref Task<EpisodeData[]?> __result)
     {
         __result = Task.FromResult(Episodes);
         return false;
@@ -140,7 +140,7 @@ internal static class HarmonyMocks
         harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetSerieID)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetSerieID)));
 
     internal static void AddEpisodesDataPatch(Harmony harmony) =>
-        harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetSerieEpisodes)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetEpisodesData)));
+        harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetSeasonEpisodes)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetSeasonEpisodes)));
 
     internal static void AddHttpGetRequestPatch(Harmony harmony) =>
         harmony.Patch(AccessTools.Method(typeof(HttpRequestHelper), nameof(HttpRequestHelper.SendGetRequest)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchSendGetRequest)));

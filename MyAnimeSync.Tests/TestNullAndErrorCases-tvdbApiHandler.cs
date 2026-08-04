@@ -64,7 +64,7 @@ public class TestNullAndErrorCasesTVDB
         HarmonyMocks.AddJsonPostRequestPatch(harmony);
         try
         {
-            Assert.Null(await TVDBApiHandler.GetSerieEpisodes(1, 1));
+            Assert.Null(await TVDBApiHandler.GetSeasonEpisodes(1, 1));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -79,7 +79,7 @@ public class TestNullAndErrorCasesTVDB
         HarmonyMocks.AddAuthenticatedGetRequestPatch(harmony);
         try
         {
-            Assert.Null(await TVDBApiHandler.GetSerieEpisodes(1, 1));
+            Assert.Null(await TVDBApiHandler.GetSeasonEpisodes(1, 1));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }

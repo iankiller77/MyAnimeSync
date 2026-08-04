@@ -353,7 +353,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 return false;
             }
 
-            EpisodeData[]? episodes = await TVDBApiHandler.GetSerieEpisodes(tvdbID.Value, 0).ConfigureAwait(true);
+            EpisodeData[]? episodes = await TVDBApiHandler.GetSeasonEpisodes(tvdbID.Value, 0).ConfigureAwait(true);
             if (episodes == null || episodes.Length < 1)
             {
                 logger.LogError("Could not retrieve episodes data for {Serie} season {Season}", serie, 0);

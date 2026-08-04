@@ -131,6 +131,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         /// <summary>
         /// Gets or sets the season number.
         /// </summary>
+        [JsonPropertyName("seasonNumber")]
         public int? SeasonNumber { get; set; }
 
         /// <summary>
