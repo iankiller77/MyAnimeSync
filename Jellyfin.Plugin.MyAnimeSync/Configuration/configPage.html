@@ -91,6 +91,27 @@
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label class="emby-checkbox-label">
+                                <input id="UseAbsoluteEpisode" type="checkbox" is="emby-checkbox" />
+                                <span style="color:yellow">Use absolute episode</span>
+                            </label>
+                            <div class="fieldDescription">
+                                This option will permit retrieving an absolute episode from TVDB for long running shows.<br>
+                                This will permit using the original TVDB seasoning logic and still be able to update shows like One Piece.<br>
+                                <span style="color: red">These options require the TVDB plugin to be installed and enabled for meta datas!</span>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="ForceAbsoluteEpisode" type="checkbox" is="emby-checkbox" />
+                                    <span style="color:yellow">Force absolute episode</span>
+                                </label>
+                                <div class="fieldDescription">
+                                    This option forces the use of absolute episode numbers for all anime searches.<br>
+                                    Contrary to the default behavior, which applies absolute episode numbering only to multi-cour seasons.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
                                 <input id="Throttle" type="checkbox" is="emby-checkbox" />
                                 <span>Throttle Api Requests</span>
                             </label>
@@ -778,6 +799,8 @@
                         AllowNSFW: false,
                         OriginalTitleSearch: false,
                         OriginalTitleSearchFallback: false,
+                        UseAbsoluteEpisode: false,
+                        ForceAbsoluteEpisode: false,
                         Throttle: true,
                         ListMonitoredLibraryGuid: [],
                         FailedUpdates: []

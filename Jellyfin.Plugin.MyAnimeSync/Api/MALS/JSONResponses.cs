@@ -46,6 +46,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
     }
 
     /// <summary>
+    /// Structure for status of a season.
+    /// </summary>
+    public static class SeasonStatus
+    {
+        /// <summary>Season Currently Airing.</summary>
+        public const string Airing = "currently_airing";
+
+        /// <summary>Season Finished Airing.</summary>
+        public const string Finished = "finished_airing";
+    }
+
+    /// <summary>
     /// Json object respresenting a node.
     /// </summary>
     public class Node
@@ -127,6 +139,18 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         [JsonPropertyName("start_date")]
         public string? StartDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the end date of the anime season.
+        /// </summary>
+        [JsonPropertyName("end_date")]
+        public string? EndDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the status of the anime season.
+        /// </summary>
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
 
         /// <summary>
         /// Gets or sets the list of related animes.

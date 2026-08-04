@@ -27,6 +27,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             AllowNSFW = false;
             OriginalTitleSearch = false;
             OriginalTitleSearchFallback = false;
+            UseAbsoluteEpisode = false;
+            ForceAbsoluteEpisode = false;
             AllowSpecials = false;
             Throttle = true;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
@@ -87,6 +89,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets a value indicating whether we want to force using original titles for serie search.
         /// </summary>
         public bool OriginalTitleSearchFallback { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we want to retrieve an absolute episode for long running shows (ex: One Piece).
+        /// </summary>
+        public bool UseAbsoluteEpisode { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we want to always use absolute episode for season identification.
+        /// </summary>
+        public bool ForceAbsoluteEpisode { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether we want to throttle myanimelist.net api requests.

@@ -68,6 +68,35 @@ public class TestNullAndErrorCasesHttpRequestHelper
         finally { HarmonyMocks.Cleanup(harmony); }
     }
 
+    // --- SendJsonPostRequest ---
+
+    [Fact]
+    public async Task HttpRequestHelper_SendJsonPostRequest_FailResponse()
+    {
+        var harmony = HarmonyMocks.CreateHarmony();
+        HarmonyMocks.AddHttpClientFailPatch(harmony);
+        try { Assert.Null(await HttpRequestHelper.SendJsonPostRequest("http://test.invalid", new Dictionary<string, string>(), false)); }
+        finally { HarmonyMocks.Cleanup(harmony); }
+    }
+
+    [Fact]
+    public async Task HttpRequestHelper_SendJsonPostRequest_ExceptionThrown()
+    {
+        var harmony = HarmonyMocks.CreateHarmony();
+        HarmonyMocks.AddHttpClientThrowPatch(harmony);
+        try { Assert.Null(await HttpRequestHelper.SendJsonPostRequest("http://test.invalid", new Dictionary<string, string>(), false)); }
+        finally { HarmonyMocks.Cleanup(harmony); }
+    }
+
+    [Fact]
+    public async Task HttpRequestHelper_SendJsonPostRequest_NullBody()
+    {
+        var harmony = HarmonyMocks.CreateHarmony();
+        HarmonyMocks.AddHttpClientNullBodyPatch(harmony);
+        try { Assert.Null(await HttpRequestHelper.SendJsonPostRequest("http://test.invalid", new Dictionary<string, string>(), false)); }
+        finally { HarmonyMocks.Cleanup(harmony); }
+    }
+
     // --- SendAuthenticatedGetRequest (no query params) ---
 
     [Fact]

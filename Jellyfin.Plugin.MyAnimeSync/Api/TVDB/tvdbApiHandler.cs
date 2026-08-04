@@ -90,12 +90,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         }
 
         /// <summary>
-        /// Gets the info on a specific episode.
+        /// Gets the episodes of a serie.
         /// </summary>
         /// <param name="serieID">TVDB ID for the serie.<see cref="string"/>.</param>
         /// <param name="season">Season number for the episode.<see cref="int"/>.</param>
-        /// <returns>The information for the specified episode.</returns>
-        public static async Task<EpisodeData[]?> GetEpisodesData(int serieID, int season)
+        /// <returns>A list of all the episodes associated with the specified season.</returns>
+        public static async Task<EpisodeData[]?> GetSeasonEpisodes(int serieID, int season)
         {
             var values = new Dictionary<string, string?>()
             {
@@ -117,6 +117,30 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
             }
 
             return node.Data.Episodes;
+        }
+
+        /// <summary>
+        /// Gets the information of a specific episode.
+        /// </summary>
+        /// <param name="episodeID">The tvdb id of the episode.<see cref="int"/>.</param>
+        /// <returns>The data of a specific episode.</returns>
+        public static async Task<EpisodeData?> GetEpisodeData(string episodeID)
+        {
+            string? token = Token;
+            if (token == null)
+            {
+                return null;
+            }
+
+            string requestUrl = ApiBaseUrl + "episodes/" + episodeID;
+            JsonNode? jsonData = await HttpRequestHelper.SendAuthenticatedGetRequest(requestUrl, token, false).ConfigureAwait(true);
+            EpisodeSearchDataNode? episodeData = jsonData.Deserialize<EpisodeSearchDataNode>();
+            if (episodeData == null || episodeData.Data == null)
+            {
+                return null;
+            }
+
+            return episodeData.Data;
         }
     }
 }

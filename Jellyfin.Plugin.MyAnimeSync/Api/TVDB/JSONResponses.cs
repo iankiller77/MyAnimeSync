@@ -100,6 +100,24 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
     }
 
     /// <summary>
+    /// Json object representing an episode datas.
+    /// </summary>
+    public class EpisodeSearchDataNode
+    {
+        /// <summary>
+        /// Gets or sets the querry status.
+        /// </summary>
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
+
+        /// <summary>
+        /// Gets or sets the querry data.
+        /// </summary>
+        [JsonPropertyName("data")]
+        public EpisodeData? Data { get; set; }
+    }
+
+    /// <summary>
     /// Json object representing the data of one episode.
     /// </summary>
     public class EpisodeData
@@ -111,10 +129,22 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
         public string? Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the episode.
+        /// Gets or sets the season number.
+        /// </summary>
+        [JsonPropertyName("seasonNumber")]
+        public int? SeasonNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets the episode number.
         /// </summary>
         [JsonPropertyName("number")]
         public int? EpisodeNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets the absolute episode number.
+        /// </summary>
+        [JsonPropertyName("absoluteNumber")]
+        public int? AbsoluteEpisodeNumber { get; set; }
     }
 }
 #pragma warning restore SA1402, SA1649
