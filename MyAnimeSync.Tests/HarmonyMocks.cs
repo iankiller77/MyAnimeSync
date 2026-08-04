@@ -32,6 +32,7 @@ internal static class HarmonyMocks
     internal static EpisodeData[]? Episodes { get; set; }
 
     internal static string? HttpGetResponse { get; set; }
+    internal static JsonNode? JsonPostResponse { get; set; }
     internal static JsonNode? AuthenticatedGetResponse { get; set; }
 
     // --- Patch methods ---
@@ -77,6 +78,12 @@ internal static class HarmonyMocks
     private static bool PatchSendGetRequest(ref Task<string?> __result)
     {
         __result = Task.FromResult(HttpGetResponse);
+        return false;
+    }
+
+    private static bool PatchSendJsonPostRequest(ref Task<JsonNode?> __result)
+    {
+        __result = Task.FromResult(JsonPostResponse);
         return false;
     }
 
@@ -138,6 +145,9 @@ internal static class HarmonyMocks
     internal static void AddHttpGetRequestPatch(Harmony harmony) =>
         harmony.Patch(AccessTools.Method(typeof(HttpRequestHelper), nameof(HttpRequestHelper.SendGetRequest)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchSendGetRequest)));
 
+    internal static void AddJsonPostRequestPatch(Harmony harmony) =>
+        harmony.Patch(AccessTools.Method(typeof(HttpRequestHelper), nameof(HttpRequestHelper.SendJsonPostRequest)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchSendJsonPostRequest)));
+
     internal static void AddAuthenticatedGetRequestPatch(Harmony harmony) =>
         harmony.Patch(
             AccessTools.Method(typeof(HttpRequestHelper), nameof(HttpRequestHelper.SendAuthenticatedGetRequest), [typeof(string), typeof(Dictionary<string, string?>), typeof(string), typeof(bool)]),
@@ -179,6 +189,7 @@ internal static class HarmonyMocks
         TvdbId = null;
         Episodes = null;
         HttpGetResponse = null;
+        JsonPostResponse = null;
         AuthenticatedGetResponse = null;
     }
 

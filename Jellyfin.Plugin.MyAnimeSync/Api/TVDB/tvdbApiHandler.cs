@@ -35,15 +35,19 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.TVDB
                         };
 
                         LoginNode? jsonData = JsonSerializer.Deserialize<LoginNode>(HttpRequestHelper.SendJsonPostRequest(LoginUrl, values, false).Result);
-                        if (Plugin.Instance == null || jsonData == null || jsonData.Data == null || jsonData.Data.Token == null)
+                        if (jsonData == null || jsonData.Data == null || jsonData.Data.Token == null)
                         {
                             return null;
                         }
 
                         token = jsonData.Data.Token;
-                        Plugin.Instance.Configuration.TVDBToken = token;
-                        Plugin.Instance.Configuration.TVDBTokenGenerationDate = DateTime.Today;
-                        Plugin.Instance.SaveConfiguration();
+
+                        if (Plugin.Instance != null)
+                        {
+                            Plugin.Instance.Configuration.TVDBToken = token;
+                            Plugin.Instance.Configuration.TVDBTokenGenerationDate = DateTime.Today;
+                            Plugin.Instance.SaveConfiguration();
+                        }
                     }
 
                     return token;
