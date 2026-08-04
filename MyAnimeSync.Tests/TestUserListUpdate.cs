@@ -30,7 +30,7 @@ public class BasicUpdate : Base
         // Delete Anime for user List to force an addition to the user list.
         await MalApiHandler.DeleteAnimeFromUserList(38000, userConfig);
 
-        UpdateEntry entry = new UpdateEntry("Demon Slayer", "Kimetsu no Yaiba", 26, 1, null);
+        UpdateEntry entry = new UpdateEntry("Demon Slayer", "Kimetsu no Yaiba", 26, 1, null, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -46,7 +46,7 @@ public class TestOriginalTitle : Base
         userConfig.UserToken = _accessToken;
         userConfig.OriginalTitleSearch = true;
 
-        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "ダンジョンに出会いを求めるのは間違っているだろうか", 1, 5, 2015);
+        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "ダンジョンに出会いを求めるのは間違っているだろうか", 1, 5, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -63,7 +63,7 @@ public class TestFallbackSearch : Base
         userConfig.OriginalTitleSearch = true;
         userConfig.OriginalTitleSearchFallback = true;
 
-        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "", 1, 5, 2015);
+        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "", 1, 5, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -180,15 +180,15 @@ public class TestUserListUpdateFail : Base
 // TODO: For now, I only check for the japanese version of the anime, more test are required to know how well it work with english titles
 //       But it seems pretty bad right now. Maybe change this eventually, should we force using the japanese title?
 //       Might need to properly implement the search behaviour for tvdb even if japanese title seems to be extremely accurate so far. (In cases where it is not available)
-public class BasicUpdateForSpecial : Base
+public class TestBasicUpdateForSpecial : Base
 {
     [Fact]
-    public async Task TestBasicUpdateForSpecial()
+    public async Task BasicUpdateForSpecial()
     {
         UserConfig userConfig = new UserConfig();
         userConfig.UserToken = _accessToken;
 
-        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015);
+        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
 
@@ -200,23 +200,77 @@ public class BasicUpdateForSpecial : Base
 }
 
 // Test for special anime with fallback
-public class FallbackSearchForSpecial : Base
+public class TestFallbackSearchForSpecial : Base
 {
     [Fact]
-    public async Task TestFallbackSearchForSpecial()
+    public async Task FallbackSearchForSpecial()
     {
         UserConfig userConfig = new UserConfig();
         userConfig.UserToken = _accessToken;
         userConfig.OriginalTitleSearch = true;
         userConfig.OriginalTitleSearchFallback = true;
 
-        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015);
+        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
 
         userConfig.AllowSpecials = true;
         result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
+    }
+}
+
+// Test for multiple animes with different production year. (Ex: JoJo's Bizarre Adventure vs JoJo's Bizarre Adventure (2012))
+public class TestYearSpecificSearch : Base
+{
+    [Fact]
+    public void YearSpecificSearch()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+        userConfig.UseAbsoluteEpisode = true;
+        int episodeNumber = 2;
+
+        AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("JoJo's Bizarre Adventure", ref episodeNumber, 1, userConfig, _logger, 2012);
+        Assert.NotNull(info);
+        Assert.Equal(14719, info.ID);
+    }
+}
+
+// Test for Absolute Episode Search
+public class TestAbsoluteEpisodeSearch : Base
+{
+    [Fact]
+    public void AbsoluteEpisodeSearch()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+        userConfig.UseAbsoluteEpisode = true;
+        int episodeNumber = 2;
+
+        // Test failing scenarios
+
+        // ID Null
+        AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("One Piece", ref episodeNumber, 22, userConfig, _logger);
+        Assert.Null(info);
+
+        // Invalid ID
+        info = OnMarkedService.InternalRetrieveAnimeData("One Piece", ref episodeNumber, 22, userConfig, _logger, tvdbID: "-1");
+        Assert.Null(info);
+
+        // Test working scenario
+
+        info = OnMarkedService.InternalRetrieveAnimeData("One Piece", ref episodeNumber, 22, userConfig, _logger, tvdbID: "10173817");
+        Assert.NotNull(info);
+        Assert.NotNull(info.ID);
+        Assert.Equal(21, info.ID);
+        Assert.Equal(1087, episodeNumber);
+
+        episodeNumber = 2;
+        info = OnMarkedService.InternalRetrieveAnimeData("JoJo's Bizarre Adventure", ref episodeNumber, 2, userConfig, _logger, 2012, "4809299");
+        Assert.NotNull(info);
+        Assert.NotNull(info.ID);
+        Assert.Equal(20899, info.ID);
     }
 }
 

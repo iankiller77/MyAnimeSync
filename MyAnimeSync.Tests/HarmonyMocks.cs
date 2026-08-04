@@ -140,7 +140,7 @@ internal static class HarmonyMocks
         harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetSerieID)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetSerieID)));
 
     internal static void AddEpisodesDataPatch(Harmony harmony) =>
-        harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetEpisodesData)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetEpisodesData)));
+        harmony.Patch(AccessTools.Method(typeof(TVDBApiHandler), nameof(TVDBApiHandler.GetSerieEpisodes)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchGetEpisodesData)));
 
     internal static void AddHttpGetRequestPatch(Harmony harmony) =>
         harmony.Patch(AccessTools.Method(typeof(HttpRequestHelper), nameof(HttpRequestHelper.SendGetRequest)), prefix: new HarmonyMethod(typeof(HarmonyMocks), nameof(PatchSendGetRequest)));

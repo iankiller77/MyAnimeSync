@@ -1,4 +1,5 @@
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Configuration
@@ -17,6 +18,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             OriginalSerieTitle = string.Empty;
             EpisodeNumber = 0;
             SeasonNumber = 0;
+            TVDBEpisodeID = string.Empty;
             RetryCount = 0;
         }
 
@@ -28,14 +30,16 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
         /// <param name="startYear">The start year of the season.<see cref="int"/>.</param>
+        /// <param name="tvdbEpisodeID">The episode ID on TVDB.<see cref="string"/>.</param>
         /// <param name="retryCount">The amount of times we tried to update the user list.<see cref="int"/>.</param>
-        public UpdateEntry(string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, int retryCount = 0)
+        public UpdateEntry(string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, string? tvdbEpisodeID, int retryCount = 0)
         {
             Serie = serie;
             OriginalSerieTitle = originalSerieTitle;
             EpisodeNumber = episodeNumber;
             SeasonNumber = seasonNumber;
             StartYear = startYear;
+            TVDBEpisodeID = tvdbEpisodeID;
             RetryCount = retryCount;
         }
 
@@ -65,6 +69,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public int? StartYear { get; set; }
 
         /// <summary>
+        /// Gets or sets the TVDB episode id.
+        /// </summary>
+        public string? TVDBEpisodeID { get; set; }
+
+        /// <summary>
         /// Gets or sets the retry count of the entry update.
         /// </summary>
         public int RetryCount { get; set; }
@@ -89,8 +98,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             int episodeNumber = episode.IndexNumber.Value;
             int season = episode.AiredSeasonNumber ?? 1;
             int? startYear = episode.Series.ProductionYear;
+            string? tvdbEpisodeID = episode.GetProviderId("Tvdb");
 
-            return new UpdateEntry(episode.SeriesName, originalTitle, episodeNumber, season, startYear);
+            return new UpdateEntry(episode.SeriesName, originalTitle, episodeNumber, season, startYear, tvdbEpisodeID);
         }
     }
 }

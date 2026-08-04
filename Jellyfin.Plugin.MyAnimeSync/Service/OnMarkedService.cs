@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection.Emit;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -152,7 +155,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
         }
 
-        internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger, int? expectedYear = null)
+        private static int CalculateMonthsBetweenDateStrings(string strDate1, string strDate2)
+        {
+            DateTime date1 = DateTime.ParseExact(strDate1, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            DateTime date2 = DateTime.ParseExact(strDate2, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            return Math.Abs(date2.Month - date1.Month + (12 * (date2.Year - date1.Year)));
+        }
+
+        internal static AnimeData? InternalRetrieveAnimeData(string serie, ref int episodeNumber, int? seasonNumber, UserConfig userConfig, ILogger logger, int? expectedYear = null, string? tvdbID = null)
         {
             // Try to validate the date on first anime fetched, also it should always be a tv episode or movie.
             int? id = MalApiHandler.GetAnimeID(serie, logger, userConfig, expectedYear, [MediaType.SeasonalAnime, MediaType.Movie]).Result;
@@ -174,6 +185,34 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
 
             int seasonOffset = seasonNumber - 1 ?? 0;
+
+            if (userConfig.UseAbsoluteEpisode && seasonOffset > 0)
+            {
+                // Check if long running show logic should be applied to this anime. (This include shows like Jojo's Bizarre Adventure)
+                if
+                (
+                    userConfig.ForceAbsoluteEpisode ||
+                    (info.Status == SeasonStatus.Airing && info.EndDate == null) ||
+                    (info.Status == SeasonStatus.Finished && info.StartDate != null && info.EndDate != null && CalculateMonthsBetweenDateStrings(info.StartDate, info.EndDate) > 5)
+                )
+                {
+                    if (tvdbID == null)
+                    {
+                        logger.LogError("Absolute episode was requested but could not retrieve TVDB episode id from jellyfin metadatas for : {Anime} season {Season} ep {Episode}", serie, seasonNumber, episodeNumber);
+                        return null;
+                    }
+
+                    EpisodeData? data = TVDBApiHandler.GetEpisodeData(tvdbID).Result;
+                    if (data == null || data.AbsoluteEpisodeNumber == null)
+                    {
+                        logger.LogError("Could not retrieve episode data for tvdb episode id : {EpisodeID}", tvdbID);
+                        return null;
+                    }
+
+                    seasonOffset = 0;
+                    episodeNumber = data.AbsoluteEpisodeNumber.Value;
+                }
+            }
 
             // If we have a specified anime season.
             while (seasonOffset > 0)
@@ -269,7 +308,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             AnimeData? info = null;
             await Task.Run(() =>
             {
-                info = InternalRetrieveAnimeData(serie, ref episodeNumber, seasonNumber, userConfig, logger, episode.StartYear);
+                info = InternalRetrieveAnimeData(serie, ref episodeNumber, seasonNumber, userConfig, logger, episode.StartYear, episode.TVDBEpisodeID);
             }).ConfigureAwait(true);
 
             if (info == null)
@@ -314,7 +353,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 return false;
             }
 
-            EpisodeData[]? episodes = await TVDBApiHandler.GetEpisodesData(tvdbID.Value, 0).ConfigureAwait(true);
+            EpisodeData[]? episodes = await TVDBApiHandler.GetSerieEpisodes(tvdbID.Value, 0).ConfigureAwait(true);
             if (episodes == null || episodes.Length < 1)
             {
                 logger.LogError("Could not retrieve episodes data for {Serie} season {Season}", serie, 0);

@@ -219,7 +219,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (maxEpisodeNumber > 0)
                                     {
-                                        UpdateEntry entry = new UpdateEntry(serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear);
+                                        UpdateEntry entry = new UpdateEntry(serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear, serie.GetProviderId("Tvdb"));
                                         _ = OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }
@@ -247,7 +247,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
                 return false;
             }
 
-            UpdateEntry entry = new UpdateEntry(serie, string.Empty, episode, season, null);
+            UpdateEntry? entry = uConfig.GetUpdateEntry(serie, season);
+            if (entry == null)
+            {
+                _logger.LogError("Could not find existing entry for anime : {Serie} season {Season}", serie, season);
+                return false;
+            }
+
             return await OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(true);
         }
     }
