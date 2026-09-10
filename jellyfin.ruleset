@@ -38,6 +38,9 @@
 
         <!-- disable warning SA1501: Statement should not be on a single line -->
         <Rule Id="SA1501" Action="None" />
+
+        <!-- disable warning CA1873: Avoid potentially expensive logging -->
+        <Rule Id="CA1873" Action="None" />
     </Rules>
 
     <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.Design">
