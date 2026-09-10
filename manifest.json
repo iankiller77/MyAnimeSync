@@ -9,6 +9,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.7.0.0",
+                "changelog": "### :rocket: Major features and improvements\n- Add option to use absolute episode for season identification (#74) @iankiller77\n### :tada: New features and improvements\n- Update code to work with Jellyfin 12.0.x (#76) @iankiller77\n- Retrieve tvdb user token from TVDB api. (#72) @iankiller77",
+                "targetAbi": "12.0.0",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.7.0.0/myanimesync_1.7.0.0.zip",
+                "checksum": "6f52dda7791db0349c46752e7bc7a1d0",
+                "timestamp": "2026-09-10T06:07:44Z"
+            },
+            {
                 "version": "1.6.2.2",
                 "changelog": "### :bug: Bug Fixes\n- Bugfix/wrong season identification with tv special between seasons (#70) @iankiller77\n- bugfix/missing_serie_season_from_user_list_when_season_marked_as_nsfw (#68) @iankiller77",
                 "targetAbi": "10.11.11.0",
