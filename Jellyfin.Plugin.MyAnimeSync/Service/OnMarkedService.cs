@@ -214,6 +214,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
             }
 
+            List<(int, AnimeData)> partHistory = new List<(int, AnimeData)>();
+
             // If we have a specified anime season.
             while (seasonOffset > 0)
             {
@@ -223,9 +225,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     logger.LogError(
                         "Could not retrieve expected sequel using season offset for anime : {ID}",
                         id);
-
-                    // TODO: Check if we can try to find the absolute episode number instead of the season number. (For anime like one piece)
-                    // int? tvdbID = await TVDBApiHandler.GetSerieID(serie).ConfigureAwait(true);
                     return null;
                 }
 
@@ -242,6 +241,33 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 {
                     int partNumber;
                     _ = int.TryParse(match.Groups[1].Value, out partNumber);
+
+                    if (partHistory.Count > 0 && partNumber < partHistory.Last().Item1)
+                    {
+                        if (partHistory.Count > 1)
+                        {
+                            AnimeData firstAnimeData = partHistory.First().Item2;
+                            AnimeData lastAnimeData = partHistory.Last().Item2;
+
+                            if (firstAnimeData.StartSeason == null || firstAnimeData.StartSeason.Year == null || lastAnimeData.StartSeason == null || lastAnimeData.StartSeason.Year == null)
+                            {
+                                logger.LogError("Could not retrieve start seasons for the multiple parts of the anime : {Anime}", serie);
+                                return null;
+                            }
+
+                            // Check if the previous parts are all for the same season year. If not, this is not a season part!
+                            if (lastAnimeData.StartSeason.Year - firstAnimeData.StartSeason.Year > 1)
+                            {
+                                // TODO: This logic might now work, some anime on tvdb have parts and are still the same season even if the span over multiple years. (Ex: attack on titan)
+                                // Investigate better alternatives!
+                            }
+
+                            partHistory.Clear();
+                        }
+                    }
+
+                    partHistory.Add((partNumber, info));
+
                     if (partNumber > 1)
                     {
                         continue;

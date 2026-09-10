@@ -135,6 +135,12 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         public int? EpisodeCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the start the cour for the anime season.
+        /// </summary>
+        [JsonPropertyName("start_season")]
+        public StartSeason? StartSeason { get; set; }
+
+        /// <summary>
         /// Gets or sets the start date of the anime season.
         /// </summary>
         [JsonPropertyName("start_date")]
@@ -163,6 +169,23 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// </summary>
         [JsonPropertyName("alternative_titles")]
         public AlternativeTitles? AlternativeTitles { get; set; }
+    }
+
+    /// <summary>
+    /// Json object representing the Start Season of an anime.
+    /// </summary>
+    public class StartSeason
+    {
+        /// <summary>
+        /// Gets or sets the year of the start season.
+        /// </summary>
+        [JsonPropertyName("year")]
+        public int? Year { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cour of the start season.
+        /// </summary>
+        public string? Season { get; set; }
     }
 
     /// <summary>
