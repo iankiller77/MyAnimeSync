@@ -1,6 +1,7 @@
 ﻿using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -259,7 +260,6 @@ public class TestAbsoluteEpisodeSearch : Base
         Assert.Null(info);
 
         // Test working scenario
-
         info = OnMarkedService.InternalRetrieveAnimeData("One Piece", ref episodeNumber, 22, userConfig, _logger, tvdbID: "10173817");
         Assert.NotNull(info);
         Assert.NotNull(info.ID);
@@ -271,6 +271,40 @@ public class TestAbsoluteEpisodeSearch : Base
         Assert.NotNull(info);
         Assert.NotNull(info.ID);
         Assert.Equal(20899, info.ID);
+    }
+}
+
+// Test with OVA between season
+public class TestOVABetweenSeasons : Base
+{
+    [Fact]
+    public void OVABetweenSeasons()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+
+        int episodeNumber = 2;
+        AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("My Happy Marriage", ref episodeNumber, 2, userConfig, _logger);
+        Assert.NotNull(info);
+        Assert.NotNull(info.ID);
+        Assert.Equal(56701, info.ID);
+    }
+}
+
+// Test for ONA series
+public class TestONAEpisodeSearch : Base
+{
+    [Fact]
+    public void ONAEpisodeSearch()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+
+        int episodeNumber = 4;
+        AnimeData? info = OnMarkedService.InternalRetrieveAnimeData("Link Click", ref episodeNumber, 2, userConfig, _logger);
+        Assert.NotNull(info);
+        Assert.NotNull(info.ID);
+        Assert.Equal(49413, info.ID);
     }
 }
 
