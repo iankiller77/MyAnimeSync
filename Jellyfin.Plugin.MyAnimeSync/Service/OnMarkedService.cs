@@ -68,6 +68,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
             else
             {
+                AnimeData? sequel = null;
                 foreach (RelatedAnime anime in relatedAnimes)
                 {
                     if (anime == null || anime.SearchEntry == null || anime.SearchEntry.ID == null)
@@ -79,11 +80,31 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     }
 
                     AnimeData? animeData = await MalApiHandler.GetAnimeInfo(anime.SearchEntry.ID.Value, userConfig).ConfigureAwait(true);
-                    if (animeData != null && animeData.MediaType == MediaType.SeasonalAnime)
+                    if (animeData != null)
                     {
-                        return animeData;
+                        if (animeData.MediaType == MediaType.SeasonalAnime) // Favor Seasonal Anime over anything else.
+                        {
+                            return animeData;
+                        }
+                        else if (animeData.MediaType != MediaType.Movie) // Ignore movie since we have more than 1 sequel type.
+                        {
+                            if (animeData.MediaType == MediaType.ONA) // Favor ONA over OVA.
+                            {
+                                sequel = animeData;
+                            }
+                            else if (sequel != null && sequel.MediaType != MediaType.ONA && animeData.MediaType == MediaType.OVA) // Favor OVA over other type.
+                            {
+                                sequel = animeData;
+                            }
+                            else if (sequel == null) // Only affect other type to sequel if no OVA and no ONA were found.
+                            {
+                                sequel = animeData;
+                            }
+                        }
                     }
                 }
+
+                return sequel;
             }
 
             if (relatedAnime == null || relatedAnime.SearchEntry == null || relatedAnime.SearchEntry.ID == null)
@@ -176,13 +197,15 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             }
 
             AnimeData? info = MalApiHandler.GetAnimeInfo(id.Value, userConfig).Result;
-            if (info == null || info.ID == null || info.EpisodeCount == null)
+            if (info == null || info.ID == null || info.EpisodeCount == null || info.MediaType == null)
             {
                 logger.LogError(
                     "Could not retrieve anime info for id : {ID}",
                     id);
                 return null;
             }
+
+            string serieType = info.MediaType;
 
             int seasonOffset = seasonNumber - 1 ?? 0;
 
@@ -230,7 +253,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                 }
 
                 // Ignore anime movie and OVA for season offset.
-                if (info.MediaType == MediaType.Movie || info.MediaType == MediaType.OVA || info.MediaType == MediaType.TVSpecial)
+                if (info.MediaType == MediaType.Movie || (serieType != MediaType.OVA && info.MediaType == MediaType.OVA) || info.MediaType == MediaType.TVSpecial)
                 {
                     continue;
                 }

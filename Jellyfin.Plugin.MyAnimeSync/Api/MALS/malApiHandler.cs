@@ -181,9 +181,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
         /// <param name="logger">The logger.<see cref="ILogger"/>.</param>
         /// <param name="uConfig">The user config.<see cref="UserConfig"/>.</param>
         /// <param name="expectedYear">The expected start date of the anime.<see cref="int"/>.</param>
-        /// <param name="expectedTypes">The expected type of anime.<see cref="string"/>.</param>
+        /// <param name="favoredTypes">The favored serie type.<see cref="string"/>.</param>
         /// <returns> The generated tokens. </returns>
-        public static async Task<int?> GetAnimeID(string animeName, ILogger logger, UserConfig uConfig, int? expectedYear = null, string[]? expectedTypes = null)
+        public static async Task<int?> GetAnimeID(string animeName, ILogger logger, UserConfig uConfig, int? expectedYear = null, string[]? favoredTypes = null)
         {
             string token = uConfig.UserToken;
             bool nsfwCheck = uConfig.AllowNSFW;
@@ -282,9 +282,13 @@ namespace Jellyfin.Plugin.MyAnimeSync.Api.Mal
                     });
                 }
 
-                if (expectedTypes != null)
+                if (favoredTypes != null)
                 {
-                    matchingEntries = matchingEntries.FindAll(element => expectedTypes.Contains(element.SearchEntry?.MediaType));
+                    // Only filter out animes if a matching entry exists for our favored types.
+                    if (matchingEntries.Any(element => favoredTypes.Contains(element.SearchEntry?.MediaType)))
+                    {
+                        matchingEntries = matchingEntries.FindAll(element => favoredTypes.Contains(element.SearchEntry?.MediaType));
+                    }
                 }
             }
 
