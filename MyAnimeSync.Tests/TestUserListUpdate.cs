@@ -31,7 +31,7 @@ public class BasicUpdate : Base
         // Delete Anime for user List to force an addition to the user list.
         await MalApiHandler.DeleteAnimeFromUserList(38000, userConfig);
 
-        UpdateEntry entry = new UpdateEntry("Demon Slayer", "Kimetsu no Yaiba", 26, 1, null, null);
+        UpdateEntry entry = new UpdateEntry(Guid.Empty, "Demon Slayer", "Kimetsu no Yaiba", 26, 1, null, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -47,7 +47,7 @@ public class TestOriginalTitle : Base
         userConfig.UserToken = _accessToken;
         userConfig.OriginalTitleSearch = true;
 
-        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "ダンジョンに出会いを求めるのは間違っているだろうか", 1, 5, 2015, null);
+        UpdateEntry entry = new UpdateEntry(Guid.Empty, "Is It Wrong to Try to Pick Up Girls in a Dungeon?", "ダンジョンに出会いを求めるのは間違っているだろうか", 1, 5, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -64,7 +64,7 @@ public class TestFallbackSearch : Base
         userConfig.OriginalTitleSearch = true;
         userConfig.OriginalTitleSearchFallback = true;
 
-        UpdateEntry entry = new UpdateEntry("Is It Wrong to Try to Pick Up Girls in a Dungeon?", "", 1, 5, 2015, null);
+        UpdateEntry entry = new UpdateEntry(Guid.Empty, "Is It Wrong to Try to Pick Up Girls in a Dungeon?", "", 1, 5, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
     }
@@ -189,7 +189,7 @@ public class TestBasicUpdateForSpecial : Base
         UserConfig userConfig = new UserConfig();
         userConfig.UserToken = _accessToken;
 
-        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015, null);
+        UpdateEntry entry = new UpdateEntry(Guid.Empty, "Overlord", "オーバーロード", 1, 0, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
 
@@ -211,7 +211,7 @@ public class TestFallbackSearchForSpecial : Base
         userConfig.OriginalTitleSearch = true;
         userConfig.OriginalTitleSearchFallback = true;
 
-        UpdateEntry entry = new UpdateEntry("Overlord", "オーバーロード", 1, 0, 2015, null);
+        UpdateEntry entry = new UpdateEntry(Guid.Empty, "Overlord", "オーバーロード", 1, 0, 2015, null);
         bool result = await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger);
         Assert.True(result);
 

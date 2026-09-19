@@ -219,7 +219,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (maxEpisodeNumber > 0)
                                     {
-                                        UpdateEntry entry = new UpdateEntry(serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear, serie.GetProviderId("Tvdb"));
+                                        UpdateEntry entry = new UpdateEntry(serie.Id, serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear, serie.GetProviderId("Tvdb"));
                                         _ = OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }

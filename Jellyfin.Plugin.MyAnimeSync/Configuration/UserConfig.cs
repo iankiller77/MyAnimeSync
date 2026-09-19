@@ -130,7 +130,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             lock (_failedUpdateLock)
             {
                 // Only retrieve result with same season number since different seasons are separate entries.
-                UpdateEntry? existingFailedEntry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => item.Serie == episodeInfo.Serie && item.SeasonNumber == episodeInfo.SeasonNumber);
+                UpdateEntry? existingFailedEntry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => (item.SerieID == episodeInfo.SerieID || item.Serie == episodeInfo.Serie) && item.SeasonNumber == episodeInfo.SeasonNumber);
                 if (existingFailedEntry == null)
                 {
                     if (success)
@@ -139,6 +139,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
                     }
 
                     List<UpdateEntry> tempList = FailedUpdates.ToList();
+                    episodeInfo.TryCount = 1;
                     tempList.Add(episodeInfo);
                     FailedUpdates = tempList.ToArray();
                 }
@@ -155,11 +156,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
                     if (existingFailedEntry.EpisodeNumber < episodeNumber)
                     {
                         existingFailedEntry.EpisodeNumber = episodeNumber;
-                        existingFailedEntry.RetryCount = 0;
+                        existingFailedEntry.TryCount = 1;
                     }
                     else
                     {
-                        existingFailedEntry.RetryCount += 1;
+                        existingFailedEntry.TryCount += 1;
                     }
                 }
 
@@ -174,7 +175,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         private void UpdateRetrySuccess(UpdateEntry entry)
         {
             List<UpdateEntry> tempList = FailedUpdates.ToList();
-            tempList.RemoveAll<UpdateEntry>(item => item.Serie == entry.Serie && item.SeasonNumber == entry.SeasonNumber);
+            tempList.RemoveAll<UpdateEntry>(item => (item.SerieID == entry.SerieID || item.Serie == entry.Serie) && item.SeasonNumber == entry.SeasonNumber);
             FailedUpdates = tempList.ToArray();
 
             Plugin.Instance?.SaveConfiguration();

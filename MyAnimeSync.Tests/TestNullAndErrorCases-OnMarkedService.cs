@@ -151,7 +151,7 @@ public class TestNullAndErrorCasesOnMarkedService
         HarmonyMocks.AddSerieIDPatch(harmony);
         try
         {
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -166,7 +166,7 @@ public class TestNullAndErrorCasesOnMarkedService
         HarmonyMocks.AddEpisodesDataPatch(harmony);
         try
         {
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -184,7 +184,7 @@ public class TestNullAndErrorCasesOnMarkedService
         try
         {
             // episode 1 not in the list → Array.Find returns null
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -205,7 +205,7 @@ public class TestNullAndErrorCasesOnMarkedService
         try
         {
             // id=null → if(id!=null) skipped → info=null → fallback → newID=null → false
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -225,7 +225,7 @@ public class TestNullAndErrorCasesOnMarkedService
         HarmonyMocks.AddAnimeInfoPatch(harmony);
         try
         {
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -248,7 +248,7 @@ public class TestNullAndErrorCasesOnMarkedService
         HarmonyMocks.AddAnimeInfoPatch(harmony);
         try
         {
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }
@@ -269,7 +269,7 @@ public class TestNullAndErrorCasesOnMarkedService
         HarmonyMocks.AddAnimeInfoPatch(harmony);
         try
         {
-            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry("Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
+            Assert.False(await OnMarkedService.InternalUpdateAnimeListSpecial(new UpdateEntry(Guid.Empty, "Test", "", 1, 1, null, null), false, HarmonyMocks.SpecialUserConfig(), _logger));
         }
         finally { HarmonyMocks.Cleanup(harmony); }
     }

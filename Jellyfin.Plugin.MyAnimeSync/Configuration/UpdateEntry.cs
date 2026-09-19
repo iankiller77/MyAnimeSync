@@ -1,3 +1,5 @@
+using System;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
@@ -18,29 +20,36 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             OriginalSerieTitle = string.Empty;
             EpisodeNumber = 0;
             SeasonNumber = 0;
-            RetryCount = 0;
+            TryCount = 0;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UpdateEntry"/> class.
         /// </summary>
+        /// <param name="serieID">The jellyfin's serie guid.<see cref="string"/>.</param>
         /// <param name="serie">The serie's name.<see cref="string"/>.</param>
         /// <param name="originalSerieTitle">The serie's original title name.<see cref="string"/>.</param>
         /// <param name="episodeNumber">The episode number.<see cref="int"/>.</param>
         /// <param name="seasonNumber">The season number.<see cref="int"/>.</param>
         /// <param name="startYear">The start year of the season.<see cref="int"/>.</param>
         /// <param name="tvdbEpisodeID">The episode ID on TVDB.<see cref="string"/>.</param>
-        /// <param name="retryCount">The amount of times we tried to update the user list.<see cref="int"/>.</param>
-        public UpdateEntry(string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, string? tvdbEpisodeID, int retryCount = 0)
+        /// <param name="tryCount">The amount of times we tried to update the user list.<see cref="int"/>.</param>
+        public UpdateEntry(Guid serieID, string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, string? tvdbEpisodeID, int tryCount = 0)
         {
+            SerieID = serieID;
             Serie = serie;
             OriginalSerieTitle = originalSerieTitle;
             EpisodeNumber = episodeNumber;
             SeasonNumber = seasonNumber;
             StartYear = startYear;
             TVDBEpisodeID = tvdbEpisodeID;
-            RetryCount = retryCount;
+            TryCount = tryCount;
         }
+
+        /// <summary>
+        /// Gets or sets the jellyfin serie id.
+        /// </summary>
+        public Guid SerieID { get; set; }
 
         /// <summary>
         /// Gets or sets the serie's name.
@@ -73,9 +82,9 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public string? TVDBEpisodeID { get; set; }
 
         /// <summary>
-        /// Gets or sets the retry count of the entry update.
+        /// Gets or sets the try count of the entry update.
         /// </summary>
-        public int RetryCount { get; set; }
+        public int TryCount { get; set; }
 
         /// <summary>
         /// Generate an update entry from the episode info provided by jellyfin.
@@ -99,7 +108,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             int? startYear = episode.Series.ProductionYear;
             string? tvdbEpisodeID = episode.GetProviderId("Tvdb");
 
-            return new UpdateEntry(episode.SeriesName, originalTitle, episodeNumber, season, startYear, tvdbEpisodeID);
+            return new UpdateEntry(episode.Series.Id, episode.SeriesName, originalTitle, episodeNumber, season, startYear, tvdbEpisodeID);
         }
     }
 }
