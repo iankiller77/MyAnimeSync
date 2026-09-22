@@ -34,7 +34,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// <param name="startYear">The start year of the season.<see cref="int"/>.</param>
         /// <param name="tvdbEpisodeID">The episode ID on TVDB.<see cref="string"/>.</param>
         /// <param name="tryCount">The amount of times we tried to update the user list.<see cref="int"/>.</param>
-        public UpdateEntry(Guid serieID, string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, string? tvdbEpisodeID, int tryCount = 0)
+        /// <param name="userEdited">Flag specifying if the user manually updated the entry.<see cref="bool"/>.</param>
+        public UpdateEntry(Guid serieID, string serie, string originalSerieTitle, int episodeNumber, int seasonNumber, int? startYear, string? tvdbEpisodeID, int tryCount = 0, bool userEdited = false)
         {
             SerieID = serieID;
             Serie = serie;
@@ -44,6 +45,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             StartYear = startYear;
             TVDBEpisodeID = tvdbEpisodeID;
             TryCount = tryCount;
+            UserEdited = userEdited;
         }
 
         /// <summary>
@@ -85,6 +87,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// Gets or sets the try count of the entry update.
         /// </summary>
         public int TryCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the user manually updated the entry.
+        /// </summary>
+        public bool UserEdited { get; set; }
 
         /// <summary>
         /// Generate an update entry from the episode info provided by jellyfin.

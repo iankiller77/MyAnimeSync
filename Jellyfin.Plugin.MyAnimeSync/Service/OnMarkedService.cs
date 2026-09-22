@@ -445,7 +445,8 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
             int seasonNumber = episode.SeasonNumber;
 
             // If this is a retry, try to validate if the jellyfin metadata changed.
-            if (episode.TryCount > 0 && episode.SerieID != Guid.Empty)
+            // Ignore updated metadata if the user updated the entry.
+            if (!episode.UserEdited && episode.TryCount > 0 && episode.SerieID != Guid.Empty)
             {
                 Series? serieInfo = BaseItem.LibraryManager.GetItemById(episode.SerieID) as Series;
                 if (serieInfo == null)

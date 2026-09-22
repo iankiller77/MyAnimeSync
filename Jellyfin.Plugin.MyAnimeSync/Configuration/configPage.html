@@ -476,7 +476,7 @@
                 });
             },
 
-            showEditEntryModal: function (serie, season, ep, onSave)
+            showEditEntryModal: function (serie, season, ep, userEdited, onSave, onReset)
             {
                 var THEME = this.THEME;
 
@@ -525,7 +525,7 @@
                 header.appendChild(closeBtn);
 
                 // Helper to build a labeled input row
-                function makeField(labelText, value) {
+                function makeField(labelText, value, readOnly) {
                     var wrap = document.createElement('div');
                     Object.assign(wrap.style, { marginBottom: '16px' });
 
@@ -545,17 +545,24 @@
                         color: THEME.textPrimary, fontSize: '14px', padding: '8px 10px',
                         outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
                     });
-                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
-                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+
+                    if (readOnly) {
+                        input.disabled = true;
+                        Object.assign(input.style, { opacity: '0.55', cursor: 'not-allowed' });
+                    } else {
+                        input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
+                        input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+                    }
 
                     wrap.appendChild(lbl);
                     wrap.appendChild(input);
                     return { wrap, input };
                 }
 
-                var serieField   = makeField('Title',   serie);
-                var seasonField  = makeField('Season',  season);
-                var episodeField = makeField('Episode', ep);
+                var serieField      = makeField('Title',   serie);
+                var seasonField     = makeField('Season',  season);
+                var episodeField    = makeField('Episode', ep);
+                var userEditedField = makeField('User Edited', (String(userEdited) === 'true') ? 'Yes' : 'No', true);
 
                 // Footer buttons
                 var footer = document.createElement('div');
@@ -578,6 +585,15 @@
                 var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.cardBgHover, THEME.borderSubtle, THEME.borderSubtle);
                 cancelBtn.addEventListener('click', function () { overlay.remove(); });
 
+                var resetBtn = makeFooterBtn('Reset', 'transparent', 'rgba(201,162,39,0.15)', '#c9a227', '#c9a227');
+                resetBtn.style.color = '#c9a227';
+                resetBtn.addEventListener('click', function () {
+                    if (confirm("This will reset this entry's manual update status and restore the default behavior.\nOn the next retry, the serie name will be retrieved automatically from Jellyfin metadata.\nDo you want to continue?")) {
+                        overlay.remove();
+                        onReset();
+                    }
+                });
+
                 var saveBtn = makeFooterBtn('Save', THEME.colorSave, THEME.colorSaveHover, THEME.accentFocus, THEME.accentFocus);
                 saveBtn.addEventListener('click', function () {
                     overlay.remove();
@@ -589,6 +605,7 @@
                 });
 
                 footer.appendChild(cancelBtn);
+                footer.appendChild(resetBtn);
                 footer.appendChild(saveBtn);
 
                 // Assemble
@@ -596,6 +613,7 @@
                 dialog.appendChild(serieField.wrap);
                 dialog.appendChild(seasonField.wrap);
                 dialog.appendChild(episodeField.wrap);
+                dialog.appendChild(userEditedField.wrap);
                 dialog.appendChild(footer);
                 overlay.appendChild(dialog);
 
@@ -682,8 +700,9 @@
                     editButton.id = result[i].Serie;
                     editButton.setAttribute("season", result[i].SeasonNumber);
                     editButton.setAttribute("episode", result[i].EpisodeNumber);
+                    editButton.setAttribute("useredited", result[i].UserEdited);
                     editButton.style.marginRight = "10px";
-                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('season'), this.getAttribute('episode'))");
+                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('season'), this.getAttribute('episode'), this.getAttribute('useredited'))");
                     editButton.textContent = "Edit";
                     label.appendChild(editButton);
 
@@ -736,22 +755,46 @@
                 }
             },
 
-            editEntry: async function (serie, season, ep)
+            editEntry: async function (serie, season, ep, userEdited)
             {
-                MyAnimeSyncConfig.showEditEntryModal(serie, season, ep, async function (newSerie, newSeason, newEp) {
-                    console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Season : " + newSeason + " - Ep : " + newEp);
+                MyAnimeSyncConfig.showEditEntryModal(
+                    serie, season, ep, userEdited,
+                    MyAnimeSyncConfig.saveEditedEntry.bind(MyAnimeSyncConfig, serie, season),
+                    MyAnimeSyncConfig.resetEditedEntryUserEditedStatus.bind(MyAnimeSyncConfig, serie, season)
+                );
+            },
 
-                    var guid = MyAnimeSyncConfig.userSelector.value;
-                    uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+            // Applies edits made in the edit entry modal and marks the entry as user edited.
+            saveEditedEntry: async function (serie, season, newSerie, newSeason, newEp)
+            {
+                console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Season : " + newSeason + " - Ep : " + newEp);
 
-                    var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
-                    failedEntry.Serie = newSerie
-                    failedEntry.SeasonNumber = newSeason
-                    failedEntry.EpisodeNumber = newEp
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
 
-                    await MyAnimeSyncConfig.saveConfig(guid);
-                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
-                });
+                var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                failedEntry.Serie = newSerie
+                failedEntry.SeasonNumber = newSeason
+                failedEntry.EpisodeNumber = newEp
+                failedEntry.UserEdited = true;
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+            },
+
+            // Clears the user edited flag so the next retry uses fresh Jellyfin metadata again.
+            resetEditedEntryUserEditedStatus: async function (serie, season)
+            {
+                console.log("Resetting user edited status for : " + serie + " / season : " + season);
+
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                failedEntry.UserEdited = false;
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
             },
 
             deleteFailedEntry: async function (serie, season)
