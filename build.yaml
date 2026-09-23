@@ -2,7 +2,7 @@
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
 imageUrl: "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png"
-version: "1.7.1.0"
+version: "1.8.0.0"
 targetAbi: "12.1.0"
 framework: "net10.0"
 overview: "Synchronise watch status on myanimelist."
@@ -14,5 +14,5 @@ owner: "iankiller77"
 artifacts:
   - "Jellyfin.Plugin.MyAnimeSync.dll"
 changelog: |-
-  ### :tada: New features and improvements
-  - Improve search for non-Japanese series (#78) @iankiller77
+  ### :rocket: Major features and improvements
+  - Use jellyfin metadata to detect changes on series information + persistent user mapping for series name (#81) @iankiller77
