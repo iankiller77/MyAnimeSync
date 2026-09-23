@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Text.Json.Nodes;
-using System.Threading;
 using System.Threading.Tasks;
+using J2N.Text;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
@@ -67,6 +67,30 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
             }
 
             _logger.LogWarning("Completed authentication process for user: {UserID}", uConfig.Id);
+        }
+
+        /// <summary>
+        /// Retrieve the name associated with the specified id from jellyfin metadata.
+        /// </summary>
+        /// <param name="seriesGUID">The jellyfin series guid.<see cref="Guid"/>.</param>
+        /// <returns>The name provided by jellyfin metadata.</returns>
+        [HttpGet("jellyfinName")]
+        public async Task<string> RetrieveJellyfinSeriesName([FromQuery(Name = "guid")] Guid seriesGUID)
+        {
+            if (seriesGUID == Guid.Empty)
+            {
+                _logger.LogError("Updated metadata were requested for an empty guid!");
+                return string.Empty;
+            }
+
+            Series? serie = _libraryManager.GetItemById(seriesGUID) as Series;
+            if (serie == null)
+            {
+                _logger.LogError("Updated metadata were requested for an invalid serie's ID: {SerieID}", seriesGUID);
+                return string.Empty;
+            }
+
+            return serie.Name;
         }
 
         /// <summary>

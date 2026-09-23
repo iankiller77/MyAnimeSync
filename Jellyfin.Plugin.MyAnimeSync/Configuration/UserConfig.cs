@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using J2N.Collections.Generic.Extensions;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Extensions;
 
 namespace Jellyfin.Plugin.MyAnimeSync.Configuration
 {
@@ -33,6 +35,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             Throttle = true;
             ListMonitoredLibraryGuid = Array.Empty<Guid>();
             FailedUpdates = Array.Empty<UpdateEntry>();
+            UserMappings = Array.Empty<UserMapping>();
         }
 
         /// <summary>
@@ -116,6 +119,11 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public UpdateEntry[] FailedUpdates { get; set; }
 
         /// <summary>
+        /// Gets or sets the list of user mappings.
+        /// </summary>
+        public UserMapping[] UserMappings { get; set; }
+
+        /// <summary>
         /// Gets or sets user id.
         /// </summary>
         public Guid Id { get; set; }
@@ -190,6 +198,26 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         public UpdateEntry? GetUpdateEntry(string serie, int season)
         {
             return FailedUpdates.FirstOrDefault<UpdateEntry>(item => item.Serie == serie && item.SeasonNumber == season);
+        }
+
+        /// <summary>
+        /// Check if a user mapping exists for this serie.
+        /// </summary>
+        /// <param name="seriesID">The series ID.<see cref="Guid"/>.</param>
+        /// <returns>If a mapping exists or not.</returns>
+        public bool SerieIsUserEdited(Guid seriesID)
+        {
+            return UserMappings.Any(element => element.SerieID == seriesID);
+        }
+
+        /// <summary>
+        /// Retrieve the user mapping.
+        /// </summary>
+        /// <param name="seriesID">The series ID.<see cref="Guid"/>.</param>
+        /// <returns>The user mapping.</returns>
+        public UserMapping? GetUserMapping(Guid seriesID)
+        {
+            return Array.Find(UserMappings, element => element.SerieID == seriesID);
         }
     }
 }
