@@ -835,12 +835,10 @@
                     row.appendChild(jellyfinNameSpan);
 
                     // Retrieve the live jellyfin name and original title for this row asynchronously.
-                    var jellyfinOriginalTitle = "";
                     await fetch(baseUrl + "/MyAnimeSync/jellyfinName?guid=" + entry.SerieID)
                         .then((response) => response.json())
                         .then((info) => {
                             jellyfinNameSpan.textContent = info[0] || "";
-                            jellyfinOriginalTitle = info[1] || "";
                         });
 
                     var serieSpan = document.createElement("span");
@@ -851,14 +849,11 @@
                     originalTitleSpan.textContent = entry.UserProvidedOriginalName;
                     row.appendChild(originalTitleSpan);
 
-                    // Create delete button for the mapping entry, using the jellyfin name/original title already
-                    // retrieved above so deleting doesn't need a second fetch.
+                    // Create delete button for the mapping entry.
                     var deleteButton = document.createElement("button");
                     deleteButton.setAttribute("type", "button");
                     deleteButton.setAttribute("serieid", entry.SerieID);
-                    deleteButton.setAttribute("seriename", jellyfinNameSpan.textContent);
-                    deleteButton.setAttribute("originaltitle", jellyfinOriginalTitle);
-                    deleteButton.setAttribute("onclick", "MyAnimeSyncConfig.deleteUserMappingBySerieId(this.getAttribute('serieid'), this.getAttribute('seriename'), this.getAttribute('originaltitle'))");
+                    deleteButton.setAttribute("onclick", "MyAnimeSyncConfig.deleteUserMappingBySerieId(this.getAttribute('serieid'))");
                     deleteButton.textContent = "Delete";
                     row.appendChild(deleteButton);
 
@@ -879,7 +874,7 @@
             },
 
             // Deletes the user mapping entry matching the given serie id.
-            deleteUserMappingBySerieId: async function (serieId, jellyfinName, jellyfinOriginalTitle)
+            deleteUserMappingBySerieId: async function (serieId)
             {
                 console.log("Deleting user mapping for serie id : " + serieId);
 
@@ -887,21 +882,36 @@
                 uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
                 uConfig.UserMappings = uConfig.UserMappings.filter(item => item.SerieID != serieId);
 
-                // Refresh matching failed entries with the live jellyfin name/original title now that the override is gone.
-                uConfig.FailedUpdates.forEach(function (item) {
-                    if (item.SerieID === serieId) {
-                        if (jellyfinName) {
-                            item.Serie = jellyfinName;
-                        }
-
-                        if (jellyfinOriginalTitle) {
-                            item.OriginalSerieTitle = jellyfinOriginalTitle;
-                        }
-                    }
-                });
+                await MyAnimeSyncConfig.refreshFailedUpdatesWithLiveJellyfinData(uConfig, serieId);
 
                 await MyAnimeSyncConfig.saveConfig(guid);
                 window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+            },
+
+            // Refreshes every failed entry for this serie with live jellyfin metadata. Shared by the mapping table's
+            // delete button and the edit modal's reset button so both behave the same way when a mapping is removed.
+            refreshFailedUpdatesWithLiveJellyfinData: async function (uConfig, serieId)
+            {
+                if (!serieId || serieId === "00000000-0000-0000-0000-000000000000") {
+                    return;
+                }
+
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                await fetch(baseUrl + "/MyAnimeSync/jellyfinName?guid=" + serieId)
+                    .then((response) => response.json())
+                    .then((info) => {
+                        uConfig.FailedUpdates.forEach(function (item) {
+                            if (item.SerieID === serieId) {
+                                if (info[0]) {
+                                    item.Serie = info[0];
+                                }
+
+                                if (info[1]) {
+                                    item.OriginalSerieTitle = info[1];
+                                }
+                            }
+                        });
+                    });
             },
 
             styleNameMappingList: function () {
@@ -1094,6 +1104,8 @@
 
                 var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
                 uConfig.UserMappings = uConfig.UserMappings.filter(item => item.SerieID != failedEntry.SerieID);
+
+                await MyAnimeSyncConfig.refreshFailedUpdatesWithLiveJellyfinData(uConfig, failedEntry.SerieID);
 
                 await MyAnimeSyncConfig.saveConfig(guid);
                 window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
