@@ -70,27 +70,27 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
         }
 
         /// <summary>
-        /// Retrieve the name associated with the specified id from jellyfin metadata.
+        /// Retrieve the name and original title associated with the specified id from jellyfin metadata.
         /// </summary>
         /// <param name="seriesGUID">The jellyfin series guid.<see cref="Guid"/>.</param>
-        /// <returns>The name provided by jellyfin metadata.</returns>
+        /// <returns>A 2-element array containing the name and original title provided by jellyfin metadata.</returns>
         [HttpGet("jellyfinName")]
-        public async Task<string> RetrieveJellyfinSeriesName([FromQuery(Name = "guid")] Guid seriesGUID)
+        public async Task<string[]> RetrieveJellyfinSeriesName([FromQuery(Name = "guid")] Guid seriesGUID)
         {
             if (seriesGUID == Guid.Empty)
             {
                 _logger.LogError("Updated metadata were requested for an empty guid!");
-                return string.Empty;
+                return new[] { string.Empty, string.Empty };
             }
 
             Series? serie = _libraryManager.GetItemById(seriesGUID) as Series;
             if (serie == null)
             {
                 _logger.LogError("Updated metadata were requested for an invalid serie's ID: {SerieID}", seriesGUID);
-                return string.Empty;
+                return new[] { string.Empty, string.Empty };
             }
 
-            return serie.Name;
+            return new[] { serie.Name, serie.OriginalTitle ?? string.Empty };
         }
 
         /// <summary>

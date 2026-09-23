@@ -444,7 +444,6 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
 
             int seasonNumber = episode.SeasonNumber;
 
-            // If this is a retry, try to validate if the jellyfin metadata changed.
             if (episode.SerieID != Guid.Empty)
             {
                 UserMapping? userMapping = userConfig.GetUserMapping(episode.SerieID);
@@ -455,7 +454,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
                     episode.Serie = userMapping.UserProvidedName;
                     episode.OriginalSerieTitle = userMapping.UserProvidedOriginalName;
                 }
-                else if (episode.TryCount > 0) // If this is a retry, retrieve episode meta data from jellyfin.
+                else if (episode.TryCount > 0) // If this is a retry, try to validate if the jellyfin metadata changed.
                 {
                     Series? serieInfo = BaseItem.LibraryManager.GetItemById(episode.SerieID) as Series;
                     if (serieInfo == null)
