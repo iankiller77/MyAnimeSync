@@ -2,7 +2,7 @@
 name: "MyAnimeSync"
 guid: "28612bb6-e3ab-4099-a682-f413d4ca19d3"
 imageUrl: "https://raw.githubusercontent.com/iankiller77/MyAnimeSync/refs/heads/main/jellyfin-plugin-myanimesync.png"
-version: "1.8.0.0"
+version: "1.8.0.1"
 targetAbi: "12.1.0"
 framework: "net10.0"
 overview: "Synchronise watch status on myanimelist."
@@ -14,5 +14,5 @@ owner: "iankiller77"
 artifacts:
   - "Jellyfin.Plugin.MyAnimeSync.dll"
 changelog: |-
-  ### :rocket: Major features and improvements
-  - Use jellyfin metadata to detect changes on series information + persistent user mapping for series name (#81) @iankiller77
+  ### :bug: Bug Fixes
+  - Improper empty guid check causing all legacy entry with no id to be updated by mistake (#84) @iankiller77
