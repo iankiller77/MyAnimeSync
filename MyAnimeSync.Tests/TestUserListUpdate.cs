@@ -308,5 +308,23 @@ public class TestONAEpisodeSearch : Base
     }
 }
 
+// Test for user mapping
+public class TestUserMapping : Base
+{
+    [Fact]
+    public async Task UserMapping()
+    {
+        UserConfig userConfig = new UserConfig();
+        userConfig.UserToken = _accessToken;
+
+        Guid guid = Guid.NewGuid();
+        UpdateEntry entry = new UpdateEntry(guid, "Some junk that won't ever match anything I hope - abc defg 1234", string.Empty, 5, 1, 2026, null);
+
+        userConfig.UserMappings = new UserMapping[] { new UserMapping(guid, "Above Myriads", "万人之上") };
+
+        Assert.True(await OnMarkedService.UpdateAnimeList(entry, userConfig, _logger));
+    }
+}
+
 // TODO: Unit test for special that validate that we retrieve the proper anime ID!
 // TODO: Integration test with Selenium for EndPoints, the config page and overall plugin. (should technically be possible to reach 100% code cover)
