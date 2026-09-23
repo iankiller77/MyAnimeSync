@@ -9,6 +9,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.8.0.0",
+                "changelog": "### :rocket: Major features and improvements\n- Use jellyfin metadata to detect changes on series information + persistent user mapping for series name (#81) @iankiller77",
+                "targetAbi": "12.1.0",
+                "sourceUrl": "https://github.com/iankiller77/MyAnimeSync/releases/download/v1.8.0.0/myanimesync_1.8.0.0.zip",
+                "checksum": "b52afb1d3135cca6a77a7436c4cd465b",
+                "timestamp": "2026-09-23T04:08:52Z"
+            },
+            {
                 "version": "1.7.1.0",
                 "changelog": "### :tada: New features and improvements\n- Improve search for non-Japanese series (#78) @iankiller77",
                 "targetAbi": "12.1.0",
