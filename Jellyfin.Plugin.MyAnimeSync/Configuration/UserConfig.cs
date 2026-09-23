@@ -138,7 +138,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
             lock (_failedUpdateLock)
             {
                 // Only retrieve result with same season number since different seasons are separate entries.
-                UpdateEntry? existingFailedEntry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => (item.SerieID == episodeInfo.SerieID || item.Serie == episodeInfo.Serie) && item.SeasonNumber == episodeInfo.SeasonNumber);
+                UpdateEntry? existingFailedEntry = FailedUpdates.FirstOrDefault<UpdateEntry>(item => ((item.SerieID != Guid.Empty && item.SerieID == episodeInfo.SerieID) || item.Serie == episodeInfo.Serie) && item.SeasonNumber == episodeInfo.SeasonNumber);
                 if (existingFailedEntry == null)
                 {
                     if (success)
@@ -183,7 +183,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         private void UpdateRetrySuccess(UpdateEntry entry)
         {
             List<UpdateEntry> tempList = FailedUpdates.ToList();
-            tempList.RemoveAll<UpdateEntry>(item => (item.SerieID == entry.SerieID || item.Serie == entry.Serie) && item.SeasonNumber == entry.SeasonNumber);
+            tempList.RemoveAll<UpdateEntry>(item => ((item.SerieID != Guid.Empty && item.SerieID == entry.SerieID) || item.Serie == entry.Serie) && item.SeasonNumber == entry.SeasonNumber);
             FailedUpdates = tempList.ToArray();
 
             Plugin.Instance?.SaveConfiguration();
@@ -207,7 +207,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// <returns>If a mapping exists or not.</returns>
         public bool SerieIsUserEdited(Guid seriesID)
         {
-            return UserMappings.Any(element => element.SerieID == seriesID);
+            return UserMappings.Any(element => element.SerieID != Guid.Empty && element.SerieID == seriesID);
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Configuration
         /// <returns>The user mapping.</returns>
         public UserMapping? GetUserMapping(Guid seriesID)
         {
-            return Array.Find(UserMappings, element => element.SerieID == seriesID);
+            return Array.Find(UserMappings, element => element.SerieID != Guid.Empty && element.SerieID == seriesID);
         }
     }
 }

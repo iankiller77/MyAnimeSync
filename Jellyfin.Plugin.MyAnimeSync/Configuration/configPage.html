@@ -720,8 +720,19 @@
                 MyAnimeSyncConfig.renderDataTable(userConfig);
             },
 
+            // Returns true only if serieId is a real, non-empty jellyfin series guid. Jellyfin's JSON api serializes
+            // guids without dashes while the plugin's xml config uses the dashed format, so this checks for the
+            // presence of any non-zero hex digit instead of comparing against one hardcoded empty-guid literal.
+            isValidSerieId: function (serieId) {
+                return !!serieId && /[1-9a-fA-F]/.test(serieId);
+            },
+
             // Infers whether a serie counts as user edited by checking if a user mapping exists for its serie id.
             serieIsUserEdited: function (userConfig, serieId) {
+                if (!MyAnimeSyncConfig.isValidSerieId(serieId)) {
+                    return false;
+                }
+
                 return userConfig.UserMappings.some(m => m.SerieID === serieId);
             },
 
@@ -823,7 +834,7 @@
                     var entry = result[i];
 
                     // Skip entries without a valid serie id.
-                    if (!entry.SerieID || entry.SerieID === "00000000-0000-0000-0000-000000000000") {
+                    if (!MyAnimeSyncConfig.isValidSerieId(entry.SerieID)) {
                         continue;
                     }
 
@@ -892,7 +903,7 @@
             // delete button and the edit modal's reset button so both behave the same way when a mapping is removed.
             refreshFailedUpdatesWithLiveJellyfinData: async function (uConfig, serieId)
             {
-                if (!serieId || serieId === "00000000-0000-0000-0000-000000000000") {
+                if (!MyAnimeSyncConfig.isValidSerieId(serieId)) {
                     return;
                 }
 
@@ -1054,7 +1065,7 @@
                 var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
 
                 // Keep every other failed entry for this same serie (e.g. other seasons) in sync with the new name.
-                if (failedEntry.SerieID && failedEntry.SerieID !== "00000000-0000-0000-0000-000000000000") {
+                if (MyAnimeSyncConfig.isValidSerieId(failedEntry.SerieID)) {
                     uConfig.FailedUpdates.forEach(function (item) {
                         if (item.SerieID === failedEntry.SerieID) {
                             item.Serie = newSerie;
@@ -1077,7 +1088,7 @@
 
             // Creates a user mapping entry for the given serie id, or updates it if one already exists.
             createOrUpdateUserMapping: function (uConfig, serieId, userProvidedName, userProvidedOriginalName) {
-                if (!serieId || serieId === "00000000-0000-0000-0000-000000000000") {
+                if (!MyAnimeSyncConfig.isValidSerieId(serieId)) {
                     return;
                 }
 
