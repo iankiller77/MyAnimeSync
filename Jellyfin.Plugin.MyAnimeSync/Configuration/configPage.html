@@ -138,7 +138,11 @@
                             </div>
                         </div>
                         <div>
-                            <h3 class="checkboxListLabel">Failed Anime Updates:</h3>
+                            <h3 class="checkboxListLabel">Data table for:</h3>
+                            <select onchange="MyAnimeSyncConfig.onDataTableSelectorChange();" is="emby-select" id="data-table-selector">
+                                <option value="failedUpdates" selected>Failed Updates</option>
+                                <option value="nameMapping">Name Mapping</option>
+                            </select>
                             <div id="FailedAnimeList" class="paperList checkboxList checkboxList-paperList"></div>
                         </div>
                     </div>
@@ -164,6 +168,7 @@
 
             userSelector: document.querySelector('#user-selector'),
             configOptionsContainer: document.querySelector('#configOptionsContainer'),
+            dataTableSelector: document.querySelector('#data-table-selector'),
 
             THEME: {
                 // Default Backgrounds
@@ -364,6 +369,9 @@
                 var hTitle = document.createElement('span');
                 hTitle.textContent = 'Title';
                 Object.assign(hTitle.style, colStyle, { flex: '1' });
+                var hUserEdited = document.createElement('span');
+                hUserEdited.textContent = 'User Edited';
+                Object.assign(hUserEdited.style, colStyle, { width: '80px', textAlign: 'center' });
                 var hSeason = document.createElement('span');
                 hSeason.textContent = 'Season';
                 Object.assign(hSeason.style, colStyle, { width: '80px', textAlign: 'center' });
@@ -374,6 +382,7 @@
                 hActions.textContent = 'Actions';
                 Object.assign(hActions.style, colStyle, { width: '98px', textAlign: 'center' });
                 header.appendChild(hTitle);
+                header.appendChild(hUserEdited);
                 header.appendChild(hSeason);
                 header.appendChild(hEpisode);
                 header.appendChild(hActions);
@@ -408,6 +417,15 @@
                             flex: '1', color: THEME.textPrimary, overflow: 'hidden',
                             textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0'
                         });
+
+                        // The user edited indicator span already exists, we only need to lay it out.
+                        var userEditedSpan = label.querySelector('.user-edited-cell');
+                        if (userEditedSpan) {
+                            Object.assign(userEditedSpan.style, {
+                                width: '80px', flexShrink: '0',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            });
+                        }
 
                         // Season and episode span don't already exists, we have to create them.
                         var retryBtn = label.querySelector('button:nth-of-type(1)');
@@ -476,7 +494,7 @@
                 });
             },
 
-            showEditEntryModal: function (serie, season, ep, onSave)
+            showEditEntryModal: function (serie, originalSerieTitle, season, ep, userEdited, onSave, onReset)
             {
                 var THEME = this.THEME;
 
@@ -525,7 +543,7 @@
                 header.appendChild(closeBtn);
 
                 // Helper to build a labeled input row
-                function makeField(labelText, value) {
+                function makeField(labelText, value, readOnly) {
                     var wrap = document.createElement('div');
                     Object.assign(wrap.style, { marginBottom: '16px' });
 
@@ -545,17 +563,25 @@
                         color: THEME.textPrimary, fontSize: '14px', padding: '8px 10px',
                         outline: 'none', fontFamily: 'Consolas, monospace', transition: 'border 0.15s'
                     });
-                    input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
-                    input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+
+                    if (readOnly) {
+                        input.disabled = true;
+                        Object.assign(input.style, { opacity: '0.55', cursor: 'not-allowed' });
+                    } else {
+                        input.addEventListener('focus', function () { input.style.border = '1px solid ' + THEME.accentFocus; });
+                        input.addEventListener('blur',  function () { input.style.border = '1px solid ' + THEME.border; });
+                    }
 
                     wrap.appendChild(lbl);
                     wrap.appendChild(input);
                     return { wrap, input };
                 }
 
-                var serieField   = makeField('Title',   serie);
-                var seasonField  = makeField('Season',  season);
-                var episodeField = makeField('Episode', ep);
+                var serieField         = makeField('Title',          serie);
+                var originalTitleField = makeField('Original Title', originalSerieTitle);
+                var seasonField        = makeField('Season',         season);
+                var episodeField       = makeField('Episode',        ep);
+                var userEditedField    = makeField('User Edited', (String(userEdited) === 'true') ? 'Yes' : 'No', true);
 
                 // Footer buttons
                 var footer = document.createElement('div');
@@ -578,24 +604,37 @@
                 var cancelBtn = makeFooterBtn('Cancel', 'transparent', THEME.cardBgHover, THEME.borderSubtle, THEME.borderSubtle);
                 cancelBtn.addEventListener('click', function () { overlay.remove(); });
 
+                var resetBtn = makeFooterBtn('Reset', 'transparent', 'rgba(201,162,39,0.15)', '#c9a227', '#c9a227');
+                resetBtn.style.color = '#c9a227';
+                resetBtn.addEventListener('click', function () {
+                    if (confirm("This will delete the user mapping and restore the default behavior.\nThe name of any entry from this serie will be updated to use Jellyfin metadata.\nDo you want to continue?")) {
+                        overlay.remove();
+                        onReset();
+                    }
+                });
+
                 var saveBtn = makeFooterBtn('Save', THEME.colorSave, THEME.colorSaveHover, THEME.accentFocus, THEME.accentFocus);
                 saveBtn.addEventListener('click', function () {
                     overlay.remove();
                     onSave(
                         serieField.input.value.trim(),
+                        originalTitleField.input.value.trim(),
                         seasonField.input.value.trim(),
                         episodeField.input.value.trim()
                     );
                 });
 
                 footer.appendChild(cancelBtn);
+                footer.appendChild(resetBtn);
                 footer.appendChild(saveBtn);
 
                 // Assemble
                 dialog.appendChild(header);
                 dialog.appendChild(serieField.wrap);
+                dialog.appendChild(originalTitleField.wrap);
                 dialog.appendChild(seasonField.wrap);
                 dialog.appendChild(episodeField.wrap);
+                dialog.appendChild(userEditedField.wrap);
                 dialog.appendChild(footer);
                 overlay.appendChild(dialog);
 
@@ -662,6 +701,31 @@
                     }
                 })
 
+                MyAnimeSyncConfig.stylePage();
+                MyAnimeSyncConfig.renderDataTable(userConfig);
+            },
+
+            // Renders whichever data table is currently selected in the data table dropdown.
+            renderDataTable: function (userConfig) {
+                if (MyAnimeSyncConfig.dataTableSelector.value === "nameMapping") {
+                    MyAnimeSyncConfig.populateNameMappingTable(userConfig);
+                } else {
+                    MyAnimeSyncConfig.populateFailedUpdateTable(userConfig);
+                }
+            },
+
+            onDataTableSelectorChange: function () {
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                var userConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                MyAnimeSyncConfig.renderDataTable(userConfig);
+            },
+
+            // Infers whether a serie counts as user edited by checking if a user mapping exists for its serie id.
+            serieIsUserEdited: function (userConfig, serieId) {
+                return userConfig.UserMappings.some(m => m.SerieID === serieId);
+            },
+
+            populateFailedUpdateTable: function (userConfig) {
                 var failedUpdateDiv = document.getElementById("FailedAnimeList");
                 failedUpdateDiv.innerHTML = "";
                 var div = document.createElement("div");
@@ -676,14 +740,25 @@
                     span.appendChild(document.createTextNode(result[i].Serie));
                     label.appendChild(span);
 
+                    // Create user edited indicator, shown right after the serie's name.
+                    var isUserEdited = MyAnimeSyncConfig.serieIsUserEdited(userConfig, result[i].SerieID);
+                    var userEditedSpan = document.createElement("span");
+                    userEditedSpan.classList.add("user-edited-cell");
+                    userEditedSpan.style.color = isUserEdited ? MyAnimeSyncConfig.THEME.colorSuccess : MyAnimeSyncConfig.THEME.colorDanger;
+                    userEditedSpan.innerHTML = isUserEdited
+                        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="20 6 9 17 4 12"/></svg>'
+                        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                    label.appendChild(userEditedSpan);
+
                     // Create edit button for failed update entry
                     var editButton = document.createElement("button");
                     editButton.setAttribute("type", "button");
                     editButton.id = result[i].Serie;
+                    editButton.setAttribute("originalSerieTitle", result[i].OriginalSerieTitle)
                     editButton.setAttribute("season", result[i].SeasonNumber);
                     editButton.setAttribute("episode", result[i].EpisodeNumber);
                     editButton.style.marginRight = "10px";
-                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('season'), this.getAttribute('episode'))");
+                    editButton.setAttribute("onclick", "MyAnimeSyncConfig.editEntry(this.id, this.getAttribute('originalSerieTitle'), this.getAttribute('season'), this.getAttribute('episode'))");
                     editButton.textContent = "Edit";
                     label.appendChild(editButton);
 
@@ -710,8 +785,226 @@
                     div.appendChild(label);
                 }
 
-                MyAnimeSyncConfig.stylePage();
                 MyAnimeSyncConfig.styleFailedAnimeList();
+            },
+
+            populateNameMappingTable: async function (userConfig) {
+                var THEME = MyAnimeSyncConfig.THEME;
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+
+                var container = document.getElementById("FailedAnimeList");
+                container.style.cssText = "";
+                container.innerHTML = "";
+
+                // Search box
+                var searchInput = document.createElement("input");
+                searchInput.type = "text";
+                searchInput.id = "nameMappingSearch";
+                searchInput.placeholder = "Search...";
+                Object.assign(searchInput.style, {
+                    width: '100%', boxSizing: 'border-box',
+                    background: THEME.pageBg, border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius,
+                    color: THEME.textPrimary, fontSize: THEME.fontSizeBase, padding: THEME.paddingInput, outline: 'none',
+                    fontFamily: THEME.fontFamily, marginBottom: '10px', display: 'block'
+                });
+                searchInput.addEventListener('focus', function () { searchInput.style.border = '1px solid ' + THEME.accentFocus; });
+                searchInput.addEventListener('blur',  function () { searchInput.style.border = '1px solid ' + THEME.border; });
+                searchInput.addEventListener('input', function () { MyAnimeSyncConfig.filterNameMappingTable(); });
+                container.appendChild(searchInput);
+
+                var div = document.createElement("div");
+                div.id = "nameMappingList";
+                div.setAttribute("data-role", "controlgroup");
+                container.appendChild(div);
+
+                var result = userConfig.UserMappings;
+                for (var i = 0; i < result.length; i++)
+                {
+                    var entry = result[i];
+
+                    // Skip entries without a valid serie id.
+                    if (!entry.SerieID || entry.SerieID === "00000000-0000-0000-0000-000000000000") {
+                        continue;
+                    }
+
+                    var row = document.createElement("div");
+                    row.classList.add("name-mapping-row");
+
+                    var jellyfinNameSpan = document.createElement("span");
+                    jellyfinNameSpan.textContent = "Loading...";
+                    row.appendChild(jellyfinNameSpan);
+
+                    // Retrieve the live jellyfin name and original title for this row asynchronously.
+                    await fetch(baseUrl + "/MyAnimeSync/jellyfinName?guid=" + entry.SerieID)
+                        .then((response) => response.json())
+                        .then((info) => {
+                            jellyfinNameSpan.textContent = info[0] || "";
+                        });
+
+                    var serieSpan = document.createElement("span");
+                    serieSpan.textContent = entry.UserProvidedName;
+                    row.appendChild(serieSpan);
+
+                    var originalTitleSpan = document.createElement("span");
+                    originalTitleSpan.textContent = entry.UserProvidedOriginalName;
+                    row.appendChild(originalTitleSpan);
+
+                    // Create delete button for the mapping entry.
+                    var deleteButton = document.createElement("button");
+                    deleteButton.setAttribute("type", "button");
+                    deleteButton.setAttribute("serieid", entry.SerieID);
+                    deleteButton.setAttribute("onclick", "MyAnimeSyncConfig.deleteUserMappingBySerieId(this.getAttribute('serieid'))");
+                    deleteButton.textContent = "Delete";
+                    row.appendChild(deleteButton);
+
+                    div.appendChild(row);
+                }
+
+                MyAnimeSyncConfig.styleNameMappingList();
+            },
+
+            filterNameMappingTable: function () {
+                var searchInput = document.getElementById("nameMappingSearch");
+                var query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+                var rows = document.querySelectorAll("#nameMappingList .name-mapping-row");
+                rows.forEach(function (row) {
+                    var matches = row.textContent.toLowerCase().includes(query);
+                    row.style.display = matches ? "flex" : "none";
+                });
+            },
+
+            // Deletes the user mapping entry matching the given serie id.
+            deleteUserMappingBySerieId: async function (serieId)
+            {
+                console.log("Deleting user mapping for serie id : " + serieId);
+
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                uConfig.UserMappings = uConfig.UserMappings.filter(item => item.SerieID != serieId);
+
+                await MyAnimeSyncConfig.refreshFailedUpdatesWithLiveJellyfinData(uConfig, serieId);
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+            },
+
+            // Refreshes every failed entry for this serie with live jellyfin metadata. Shared by the mapping table's
+            // delete button and the edit modal's reset button so both behave the same way when a mapping is removed.
+            refreshFailedUpdatesWithLiveJellyfinData: async function (uConfig, serieId)
+            {
+                if (!serieId || serieId === "00000000-0000-0000-0000-000000000000") {
+                    return;
+                }
+
+                var baseUrl = document.getElementById("jellyfinUrl").value;
+                await fetch(baseUrl + "/MyAnimeSync/jellyfinName?guid=" + serieId)
+                    .then((response) => response.json())
+                    .then((info) => {
+                        uConfig.FailedUpdates.forEach(function (item) {
+                            if (item.SerieID === serieId) {
+                                if (info[0]) {
+                                    item.Serie = info[0];
+                                }
+
+                                if (info[1]) {
+                                    item.OriginalSerieTitle = info[1];
+                                }
+                            }
+                        });
+                    });
+            },
+
+            styleNameMappingList: function () {
+                var THEME = MyAnimeSyncConfig.THEME;
+
+                var listDiv = document.getElementById('nameMappingList');
+                if (!listDiv) return;
+
+                var rows = listDiv.querySelectorAll('.name-mapping-row');
+
+                if (rows.length === 0) {
+                    listDiv.textContent = 'No entries.';
+                    Object.assign(listDiv.style, {
+                        padding: '2rem', textAlign: 'center', color: THEME.textMuted,
+                        border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius, background: THEME.cardBg
+                    });
+                    return;
+                }
+
+                Object.assign(listDiv.style, {
+                    border: '1px solid ' + THEME.border, borderRadius: THEME.borderRadius, overflow: 'hidden',
+                    fontFamily: THEME.fontFamily, fontSize: '14px', background: THEME.cardBg
+                });
+
+                var header = document.createElement('div');
+                Object.assign(header.style, {
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px',
+                    background: THEME.cardBgHover, borderBottom: '1px solid ' + THEME.border
+                });
+                var colStyle = {
+                    fontSize: '12px', fontWeight: '500', color: THEME.textMuted,
+                    textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: '0'
+                };
+                var hJellyfin = document.createElement('span');
+                hJellyfin.textContent = 'Jellyfin Name';
+                Object.assign(hJellyfin.style, colStyle, { flex: '1' });
+                var hSerie = document.createElement('span');
+                hSerie.textContent = 'Serie';
+                Object.assign(hSerie.style, colStyle, { flex: '1' });
+                var hOriginal = document.createElement('span');
+                hOriginal.textContent = 'Original Title';
+                Object.assign(hOriginal.style, colStyle, { flex: '1' });
+                var hActions = document.createElement('span');
+                hActions.textContent = 'Actions';
+                Object.assign(hActions.style, colStyle, { width: '98px', textAlign: 'center' });
+                header.appendChild(hJellyfin);
+                header.appendChild(hSerie);
+                header.appendChild(hOriginal);
+                header.appendChild(hActions);
+                listDiv.insertBefore(header, listDiv.firstChild);
+
+                var ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+                rows.forEach(function (row, i) {
+                    Object.assign(row.style, {
+                        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px',
+                        borderBottom: i < rows.length - 1 ? '1px solid ' + THEME.border : 'none',
+                        background: THEME.cardBg, transition: 'background 0.1s'
+                    });
+                    row.addEventListener('mouseenter', function () { row.style.background = THEME.cardBgHover; });
+                    row.addEventListener('mouseleave', function () { row.style.background = THEME.cardBg; });
+
+                    row.querySelectorAll('span').forEach(function (span) {
+                        Object.assign(span.style, {
+                            flex: '1', color: THEME.textPrimary, overflow: 'hidden',
+                            textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        });
+                    });
+
+                    var deleteBtn = row.querySelector('button');
+                    if (deleteBtn) {
+                        deleteBtn.innerHTML = ICON_DEL;
+                        Object.assign(deleteBtn.style, {
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', padding: '0', borderRadius: THEME.borderRadius, cursor: 'pointer',
+                            border: '1px solid ' + THEME.borderSubtle, background: 'transparent',
+                            color: THEME.textMuted, flexShrink: '0'
+                        });
+                        deleteBtn.addEventListener('mouseenter', function () {
+                            Object.assign(deleteBtn.style, { background: THEME.colorDangerBg, color: THEME.colorDanger, border: '1px solid ' + THEME.colorDanger });
+                        });
+                        deleteBtn.addEventListener('mouseleave', function () {
+                            Object.assign(deleteBtn.style, { background: 'transparent', color: THEME.textMuted, border: '1px solid ' + THEME.borderSubtle });
+                        });
+
+                        // Match the failed update list's action column width, with the button
+                        // centered where the retry button would sit in that 3-button layout.
+                        var actionsWrap = document.createElement('div');
+                        Object.assign(actionsWrap.style, { display: 'flex', justifyContent: 'center', width: '98px', flexShrink: '0' });
+                        row.appendChild(actionsWrap);
+                        actionsWrap.appendChild(deleteBtn);
+                    }
+                });
             },
 
             populateOptionsContainer: async function (userConfig) {
@@ -736,22 +1029,86 @@
                 }
             },
 
-            editEntry: async function (serie, season, ep)
+            editEntry: async function (serie, originalSerieTitle, season, ep)
             {
-                MyAnimeSyncConfig.showEditEntryModal(serie, season, ep, async function (newSerie, newSeason, newEp) {
-                    console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Season : " + newSeason + " - Ep : " + newEp);
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                var uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                var userEdited = failedEntry ? MyAnimeSyncConfig.serieIsUserEdited(uConfig, failedEntry.SerieID) : false;
 
-                    var guid = MyAnimeSyncConfig.userSelector.value;
-                    uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+                MyAnimeSyncConfig.showEditEntryModal(
+                    serie, originalSerieTitle, season, ep, userEdited,
+                    MyAnimeSyncConfig.saveEditedEntry.bind(MyAnimeSyncConfig, serie, season),
+                    MyAnimeSyncConfig.resetEditedEntryUserEditedStatus.bind(MyAnimeSyncConfig, serie, season)
+                );
+            },
 
-                    var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+            // Applies edits made in the edit entry modal and marks the entry as user edited.
+            saveEditedEntry: async function (serie, season, newSerie, newOriginalSerieTitle, newSeason, newEp)
+            {
+                console.log("Updating : " + serie + " / season : " + season + " | New values: " + newSerie + " - Original Title : " + newOriginalSerieTitle + " - Season : " + newSeason + " - Ep : " + newEp);
+
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+
+                // Keep every other failed entry for this same serie (e.g. other seasons) in sync with the new name.
+                if (failedEntry.SerieID && failedEntry.SerieID !== "00000000-0000-0000-0000-000000000000") {
+                    uConfig.FailedUpdates.forEach(function (item) {
+                        if (item.SerieID === failedEntry.SerieID) {
+                            item.Serie = newSerie;
+                            item.OriginalSerieTitle = newOriginalSerieTitle;
+                        }
+                    });
+                }
+                else { // This is important to support legacy failed update that do not have a specified series id!
                     failedEntry.Serie = newSerie
+                    failedEntry.OriginalSerieTitle = newOriginalSerieTitle
                     failedEntry.SeasonNumber = newSeason
                     failedEntry.EpisodeNumber = newEp
+                }
 
-                    await MyAnimeSyncConfig.saveConfig(guid);
-                    window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
-                });
+                MyAnimeSyncConfig.createOrUpdateUserMapping(uConfig, failedEntry.SerieID, newSerie, newOriginalSerieTitle);
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
+            },
+
+            // Creates a user mapping entry for the given serie id, or updates it if one already exists.
+            createOrUpdateUserMapping: function (uConfig, serieId, userProvidedName, userProvidedOriginalName) {
+                if (!serieId || serieId === "00000000-0000-0000-0000-000000000000") {
+                    return;
+                }
+
+                var mapping = uConfig.UserMappings.find(item => item.SerieID == serieId);
+                if (mapping) {
+                    mapping.UserProvidedName = userProvidedName;
+                    mapping.UserProvidedOriginalName = userProvidedOriginalName;
+                } else {
+                    uConfig.UserMappings.push({
+                        SerieID: serieId,
+                        UserProvidedName: userProvidedName,
+                        UserProvidedOriginalName: userProvidedOriginalName
+                    });
+                }
+            },
+
+            // Removes the user mapping for this entry's serie id so the next retry uses fresh Jellyfin metadata again.
+            resetEditedEntryUserEditedStatus: async function (serie, season)
+            {
+                console.log("Resetting user edited status for : " + serie + " / season : " + season);
+
+                var guid = MyAnimeSyncConfig.userSelector.value;
+                uConfig = MyAnimeSyncConfig.configCache.UserConfigs.filter(e => e.Id === guid)[0];
+
+                var failedEntry = uConfig.FailedUpdates.find(item => (item.Serie == serie && item.SeasonNumber == season));
+                uConfig.UserMappings = uConfig.UserMappings.filter(item => item.SerieID != failedEntry.SerieID);
+
+                await MyAnimeSyncConfig.refreshFailedUpdatesWithLiveJellyfinData(uConfig, failedEntry.SerieID);
+
+                await MyAnimeSyncConfig.saveConfig(guid);
+                window.ApiClient.getPluginConfiguration(MyAnimeSyncConfig.guid).then(MyAnimeSyncConfig.loadConfig.bind(MyAnimeSyncConfig, MyAnimeSyncConfig.userSelector.value));
             },
 
             deleteFailedEntry: async function (serie, season)
@@ -803,7 +1160,8 @@
                         ForceAbsoluteEpisode: false,
                         Throttle: true,
                         ListMonitoredLibraryGuid: [],
-                        FailedUpdates: []
+                        FailedUpdates: [],
+                        UserMappings: []
                     })
                 }
             },

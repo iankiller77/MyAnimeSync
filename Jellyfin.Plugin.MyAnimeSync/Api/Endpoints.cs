@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Text.Json.Nodes;
-using System.Threading;
 using System.Threading.Tasks;
+using J2N.Text;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
 using Jellyfin.Plugin.MyAnimeSync.Service;
@@ -67,6 +67,30 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
             }
 
             _logger.LogWarning("Completed authentication process for user: {UserID}", uConfig.Id);
+        }
+
+        /// <summary>
+        /// Retrieve the name and original title associated with the specified id from jellyfin metadata.
+        /// </summary>
+        /// <param name="seriesGUID">The jellyfin series guid.<see cref="Guid"/>.</param>
+        /// <returns>A 2-element array containing the name and original title provided by jellyfin metadata.</returns>
+        [HttpGet("jellyfinName")]
+        public async Task<string[]> RetrieveJellyfinSeriesName([FromQuery(Name = "guid")] Guid seriesGUID)
+        {
+            if (seriesGUID == Guid.Empty)
+            {
+                _logger.LogError("Updated metadata were requested for an empty guid!");
+                return new[] { string.Empty, string.Empty };
+            }
+
+            Series? serie = _libraryManager.GetItemById(seriesGUID) as Series;
+            if (serie == null)
+            {
+                _logger.LogError("Updated metadata were requested for an invalid serie's ID: {SerieID}", seriesGUID);
+                return new[] { string.Empty, string.Empty };
+            }
+
+            return new[] { serie.Name, serie.OriginalTitle ?? string.Empty };
         }
 
         /// <summary>
@@ -219,7 +243,7 @@ namespace Jellyfin.Plugin.MyAnimeSync.Endpoints
 
                                     if (maxEpisodeNumber > 0)
                                     {
-                                        UpdateEntry entry = new UpdateEntry(serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear, serie.GetProviderId("Tvdb"));
+                                        UpdateEntry entry = new UpdateEntry(serie.Id, serie.Name, serie.OriginalTitle ?? string.Empty, maxEpisodeNumber, season.IndexNumber ?? 1, serie.ProductionYear, serie.GetProviderId("Tvdb"));
                                         _ = OnMarkedService.UpdateAnimeList(entry, uConfig, _logger).ConfigureAwait(false);
                                     }
                                 }

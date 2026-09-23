@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.Linq;
 using System.Reflection.Emit;
@@ -7,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Naming.TV;
 using Jellyfin.Plugin.MyAnimeSync.Api.Mal;
 using Jellyfin.Plugin.MyAnimeSync.Api.TVDB;
 using Jellyfin.Plugin.MyAnimeSync.Configuration;
@@ -438,10 +440,46 @@ namespace Jellyfin.Plugin.MyAnimeSync.Service
         {
             bool success;
 
-            string serie = episode.Serie;
             bool fallbackSearch = userConfig.OriginalTitleSearchFallback;
 
             int seasonNumber = episode.SeasonNumber;
+
+            if (episode.SerieID != Guid.Empty)
+            {
+                UserMapping? userMapping = userConfig.GetUserMapping(episode.SerieID);
+
+                // Use user provided information for the serie if it exists.
+                if (userMapping != null)
+                {
+                    episode.Serie = userMapping.UserProvidedName;
+                    episode.OriginalSerieTitle = userMapping.UserProvidedOriginalName;
+                }
+                else if (episode.TryCount > 0) // If this is a retry, try to validate if the jellyfin metadata changed.
+                {
+                    Series? serieInfo = BaseItem.LibraryManager.GetItemById(episode.SerieID) as Series;
+                    if (serieInfo == null)
+                    {
+                        logger.LogError("Could not validate serie metadata for serie with id : {SerieID} - Metadata validation will be skipped and old metadata will be used!", episode.SerieID);
+                    }
+                    else
+                    {
+                        if (serieInfo.Name != episode.Serie || serieInfo.OriginalTitle != episode.OriginalSerieTitle)
+                        {
+                            logger.LogWarning(
+                                """
+                                Detected metadata change for serie with id : {SerieID} - Metadata will be updated!
+                                New series name : {SeriesName} and new series original title : {OriginalName}
+                                """,
+                                episode.SerieID,
+                                serieInfo.Name,
+                                serieInfo.OriginalTitle);
+
+                            episode.Serie = serieInfo.Name;
+                            episode.OriginalSerieTitle = serieInfo.OriginalTitle;
+                        }
+                    }
+                }
+            }
 
             if (seasonNumber > 0)
             {
